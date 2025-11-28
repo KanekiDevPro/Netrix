@@ -84,8 +84,8 @@ For easier tunnel management, we provide a Python management script that handles
 **Important:** To use Netrix, you need to purchase a license first.
 
 **Purchase License:**
-- 🤖 **Telegram Bot**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
-- 👤 **Developer Contact**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+- 🤖 **Telegram Bot**: [@mnxcore_bot](https://t.me/mnycore_bot)
+- 👤 **Developer Contact**: [@g0dline](https://t.me/g0dline)
 
 After purchasing the license, you will receive a license key that you need to activate before using Netrix.
 
@@ -831,8 +831,8 @@ Netrix از معماری چند لایه استفاده می‌کند:
 **مهم:** برای استفاده از Netrix، ابتدا باید لایسنس خریداری کنید.
 
 **خرید لایسنس:**
-- 🤖 **ربات تلگرام**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
-- 👤 **تماس با سازنده**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+- 🤖 **ربات تلگرام**: [@mnxcore_bot](https://t.me/mnxcore_bot)
+- 👤 **تماس با سازنده**: [@g0dline](https://t.me/g0dline)
 
 پس از خرید لایسنس، یک کلید لایسنس دریافت خواهید کرد که باید قبل از استفاده از Netrix آن را فعال کنید.
 
