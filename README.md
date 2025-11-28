@@ -151,6 +151,26 @@ netrix client [OPTIONS]
 
 ---
 
+## Performance Profiles
+
+Netrix provides 4 pre-configured performance profiles optimized for different use cases:
+
+| Profile | Use Case | SMUX Keepalive | SMUX Buffer | KCP Interval | KCP Windows | Best For |
+|---------|----------|----------------|-------------|--------------|-------------|----------|
+| **balanced** (default) | General purpose | 8s | 8MB | 10ms | 768/768 | Most users, balanced performance |
+| **aggressive** | High throughput | 5s | 16MB | 8ms | 1024/1024 | Maximum speed, more CPU usage |
+| **latency** | Low latency | 3s | 4MB | 8ms | 768/768 | Gaming, real-time apps |
+| **cpu-efficient** | Low CPU usage | 10s | 8MB | 20ms | 512/512 | Resource-constrained servers |
+
+**Profile Details:**
+
+- **balanced**: Best overall performance for most users. Good balance between latency, throughput, and CPU usage.
+- **aggressive**: Maximum throughput and speed. Uses more CPU and memory. Best for high-bandwidth applications.
+- **latency**: Optimized for low latency. Best for gaming, video calls, and real-time applications (like Instagram).
+- **cpu-efficient**: Minimizes CPU usage. Best for servers with limited resources or when running many instances.
+
+---
+
 ## Complete Examples for Each Transport
 
 ### TCP Multiplexing (tcpmux)
@@ -162,40 +182,49 @@ mode: "server"
 listen: "0.0.0.0:4000"
 transport: "tcpmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
+  # TCP Settings
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run server:**
@@ -209,39 +238,48 @@ netrix -config server-tcp.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "tcpmux"
     addr: "SERVER_IP:4000"
-    connection_pool: 4
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 4        # number of simultaneous tunnels
+    aggressive_pool: false    # aggressively re-dial on failure
+    retry_interval: 3         # seconds
+    dial_timeout: 10          # seconds
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
+  # TCP Settings
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run client:**
@@ -278,28 +316,45 @@ smux:
   frame_size: 32768
 
 kcp:
-  nodelay: 1
-  interval: 8
-  resend: 2
-  nc: 1
-  sndwnd: 768
-  rcvwnd: 768
-  mtu: 1350
+  nodelay: 1          # 0=disable, 1=enable
+  interval: 8         # milliseconds (update interval)
+  resend: 2           # fast resend threshold
+  nc: 1               # disable congestion control (0=disable, 1=enable)
+  sndwnd: 768         # send window size
+  rcvwnd: 768         # receive window size
+  mtu: 1350           # Maximum Transmission Unit (bytes)
 
 advanced:
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  # TCP Settings (for local connections)
+  tcp_nodelay: true
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # UDP Settings (for tunnel connection)
+  udp_read_buffer: 4194304   # 4MB (bytes)
+  udp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run server:**
@@ -313,44 +368,61 @@ netrix -config server-kcp.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "latency"
+profile: "latency"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "kcpmux"
     addr: "SERVER_IP:4001"
-    connection_pool: 4
-    aggressive_pool: true
-    retry_interval: 1
-    dial_timeout: 5
+    connection_pool: 4        # number of simultaneous tunnels
+    aggressive_pool: true     # aggressively re-dial on failure
+    retry_interval: 1         # seconds
+    dial_timeout: 5           # seconds
 
 smux:
-  keepalive: 3
-  max_recv: 4194304
-  max_stream: 4194304
-  frame_size: 32768
+  keepalive: 3          # seconds
+  max_recv: 4194304     # 4MB (bytes)
+  max_stream: 4194304   # 4MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 kcp:
-  nodelay: 1
-  interval: 8
-  resend: 2
-  nc: 1
-  sndwnd: 512
-  rcvwnd: 512
-  mtu: 1350
+  nodelay: 1          # 0=disable, 1=enable
+  interval: 8         # milliseconds (update interval)
+  resend: 2           # fast resend threshold
+  nc: 1               # disable congestion control (0=disable, 1=enable)
+  sndwnd: 768         # send window size
+  rcvwnd: 768         # receive window size
+  mtu: 1350           # Maximum Transmission Unit (bytes)
 
 advanced:
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  # TCP Settings (for local connections)
+  tcp_nodelay: true
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # UDP Settings (for tunnel connection)
+  udp_read_buffer: 4194304   # 4MB (bytes)
+  udp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run client:**
@@ -370,43 +442,54 @@ mode: "server"
 listen: "0.0.0.0:8080"
 transport: "wsmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # TCP Settings (for local connections)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # WebSocket Settings (for tunnel connection)
+  websocket_read_buffer: 262144   # 256KB (bytes)
+  websocket_write_buffer: 262144  # 256KB (bytes)
+  websocket_compression: false    # enable/disable compression
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run server:**
@@ -420,42 +503,53 @@ netrix -config server-ws.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "wsmux"
     addr: "SERVER_IP:8080"
-    connection_pool: 8
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 8        # number of simultaneous tunnels
+    aggressive_pool: false    # aggressively re-dial on failure
+    retry_interval: 3         # seconds
+    dial_timeout: 10          # seconds
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # TCP Settings (for local connections)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # WebSocket Settings (for tunnel connection)
+  websocket_read_buffer: 262144   # 256KB (bytes)
+  websocket_write_buffer: 262144  # 256KB (bytes)
+  websocket_compression: false    # enable/disable compression
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run client:**
@@ -483,46 +577,58 @@ mode: "server"
 listen: "0.0.0.0:8443"
 transport: "wssmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
-cert_file: "/path/to/server.crt"
-key_file: "/path/to/server.key"
+# TLS Certificate Files (required for wssmux)
+cert_file: "/path/to/server.crt"  # TLS certificate file path
+key_file: "/path/to/server.key"   # TLS private key file path
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # TCP Settings (for local connections)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # WebSocket Settings (for tunnel connection)
+  websocket_read_buffer: 262144   # 256KB (bytes)
+  websocket_write_buffer: 262144  # 256KB (bytes)
+  websocket_compression: false    # enable/disable compression
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run server:**
@@ -536,42 +642,53 @@ netrix -config server-wss.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "wssmux"
     addr: "SERVER_IP:8443"
-    connection_pool: 8
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 8        # number of simultaneous tunnels
+    aggressive_pool: false    # aggressively re-dial on failure
+    retry_interval: 3         # seconds
+    dial_timeout: 10          # seconds
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # seconds
+  max_recv: 8388608     # 8MB (bytes)
+  max_stream: 8388608   # 8MB (bytes)
+  frame_size: 32768     # 32KB (bytes)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # TCP Settings (for local connections)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # seconds
+  tcp_read_buffer: 4194304   # 4MB (bytes)
+  tcp_write_buffer: 4194304  # 4MB (bytes)
+  
+  # WebSocket Settings (for tunnel connection)
+  websocket_read_buffer: 262144   # 256KB (bytes)
+  websocket_write_buffer: 262144  # 256KB (bytes)
+  websocket_compression: false    # enable/disable compression
+  
+  # Connection Management
+  cleanup_interval: 3      # seconds
+  session_timeout: 30      # seconds
+  connection_timeout: 60   # seconds
+  stream_timeout: 120      # seconds
+  max_connections: 2000    # maximum concurrent connections
+  
+  # UDP Flow Management
+  max_udp_flows: 1000      # maximum concurrent UDP flows
+  udp_flow_timeout: 300    # seconds (5 minutes)
+  
+  # Buffer Pool Sizes (optional - 0 = use default)
+  buffer_pool_size: 0           # default: 131072 (128KB)
+  large_buffer_pool_size: 0     # default: 131072 (128KB)
+  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
+  udp_data_slice_size: 0        # default: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # seconds (default: 10)
+verbose: false       # enable verbose logging
 ```
 
 **Run client:**
@@ -729,6 +846,26 @@ netrix client [OPTIONS]
 
 <div dir="rtl">
 
+## پروفایل‌های عملکرد (Performance Profiles)
+
+Netrix شامل 4 پروفایل از پیش تنظیم شده است که برای موارد استفاده مختلف بهینه شده‌اند:
+
+| پروفایل | کاربرد | SMUX Keepalive | SMUX Buffer | KCP Interval | KCP Windows | بهترین برای |
+|---------|--------|----------------|-------------|--------------|-------------|-------------|
+| **balanced** (پیش‌فرض) | استفاده عمومی | 8s | 8MB | 10ms | 768/768 | بیشتر کاربران، عملکرد متعادل |
+| **aggressive** | سرعت بالا | 5s | 16MB | 8ms | 1024/1024 | حداکثر سرعت، مصرف CPU بیشتر |
+| **latency** | تاخیر کم | 3s | 4MB | 8ms | 768/768 | گیمینگ، اپلیکیشن‌های real-time |
+| **cpu-efficient** | مصرف CPU کم | 10s | 8MB | 20ms | 512/512 | سرورهای محدود از نظر منابع |
+
+**جزئیات پروفایل‌ها:**
+
+- **balanced**: بهترین عملکرد کلی برای بیشتر کاربران. تعادل خوب بین latency، throughput و مصرف CPU.
+- **aggressive**: حداکثر throughput و سرعت. CPU و حافظه بیشتری استفاده می‌کند. بهترین برای اپلیکیشن‌های پهن‌باند.
+- **latency**: بهینه شده برای latency پایین. بهترین برای گیمینگ، تماس ویدیویی و اپلیکیشن‌های real-time (مثل اینستاگرام).
+- **cpu-efficient**: مصرف CPU را به حداقل می‌رساند. بهترین برای سرورهای محدود یا هنگام اجرای چندین instance.
+
+---
+
 ## مثال‌های کامل برای هر Transport
 
 ### TCP Multiplexing (tcpmux)
@@ -740,40 +877,49 @@ mode: "server"
 listen: "0.0.0.0:4000"
 transport: "tcpmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
+  # تنظیمات TCP
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = نامحدود، توصیه: 0 یا 1000+
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای سرور:**
@@ -787,39 +933,48 @@ netrix -config server-tcp.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "tcpmux"
     addr: "SERVER_IP:4000"
-    connection_pool: 4
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 4        # تعداد تونل همزمان
+    aggressive_pool: false    # reconnect تهاجمی در صورت خطا
+    retry_interval: 3         # ثانیه
+    dial_timeout: 10          # ثانیه
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
+  # تنظیمات TCP
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای کلاینت:**
@@ -856,28 +1011,45 @@ smux:
   frame_size: 32768
 
 kcp:
-  nodelay: 1
-  interval: 8
-  resend: 2
-  nc: 1
-  sndwnd: 768
-  rcvwnd: 768
-  mtu: 1350
+  nodelay: 1          # 0=غیرفعال, 1=فعال
+  interval: 8         # میلی‌ثانیه (فاصله update)
+  resend: 2           # آستانه resend سریع
+  nc: 1               # غیرفعال‌سازی congestion control (0=غیرفعال, 1=فعال)
+  sndwnd: 768         # اندازه پنجره ارسال
+  rcvwnd: 768         # اندازه پنجره دریافت
+  mtu: 1350           # Maximum Transmission Unit (بایت)
 
 advanced:
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  # تنظیمات TCP (برای اتصالات محلی)
+  tcp_nodelay: true
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات UDP (برای tunnel)
+  udp_read_buffer: 4194304   # 4MB (بایت)
+  udp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = نامحدود، توصیه: 0 یا 1000+
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای سرور:**
@@ -891,44 +1063,61 @@ netrix -config server-kcp.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "latency"
+profile: "latency"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "kcpmux"
     addr: "SERVER_IP:4001"
-    connection_pool: 4
-    aggressive_pool: true
-    retry_interval: 1
-    dial_timeout: 5
+    connection_pool: 4        # تعداد تونل همزمان
+    aggressive_pool: true     # reconnect تهاجمی در صورت خطا
+    retry_interval: 1         # ثانیه
+    dial_timeout: 5           # ثانیه
 
 smux:
-  keepalive: 3
-  max_recv: 4194304
-  max_stream: 4194304
-  frame_size: 32768
+  keepalive: 3          # ثانیه
+  max_recv: 4194304     # 4MB (بایت)
+  max_stream: 4194304   # 4MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 kcp:
-  nodelay: 1
-  interval: 8
-  resend: 2
-  nc: 1
-  sndwnd: 512
-  rcvwnd: 512
-  mtu: 1350
+  nodelay: 1          # 0=غیرفعال, 1=فعال
+  interval: 8         # میلی‌ثانیه (فاصله update)
+  resend: 2           # آستانه resend سریع
+  nc: 1               # غیرفعال‌سازی congestion control (0=غیرفعال, 1=فعال)
+  sndwnd: 768         # اندازه پنجره ارسال
+  rcvwnd: 768         # اندازه پنجره دریافت
+  mtu: 1350           # Maximum Transmission Unit (بایت)
 
 advanced:
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  # تنظیمات TCP (برای اتصالات محلی)
+  tcp_nodelay: true
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات UDP (برای tunnel)
+  udp_read_buffer: 4194304   # 4MB (بایت)
+  udp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای کلاینت:**
@@ -948,43 +1137,54 @@ mode: "server"
 listen: "0.0.0.0:8080"
 transport: "wsmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # تنظیمات TCP (برای اتصالات محلی)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات WebSocket (برای tunnel)
+  websocket_read_buffer: 262144   # 256KB (بایت)
+  websocket_write_buffer: 262144  # 256KB (بایت)
+  websocket_compression: false    # فعال/غیرفعال کردن compression
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = نامحدود، توصیه: 0 یا 1000+
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای سرور:**
@@ -998,42 +1198,53 @@ netrix -config server-ws.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "wsmux"
     addr: "SERVER_IP:8080"
-    connection_pool: 8
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 8        # تعداد تونل همزمان
+    aggressive_pool: false    # reconnect تهاجمی در صورت خطا
+    retry_interval: 3         # ثانیه
+    dial_timeout: 10          # ثانیه
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # تنظیمات TCP (برای اتصالات محلی)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات WebSocket (برای tunnel)
+  websocket_read_buffer: 262144   # 256KB (بایت)
+  websocket_write_buffer: 262144  # 256KB (بایت)
+  websocket_compression: false    # فعال/غیرفعال کردن compression
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای کلاینت:**
@@ -1061,46 +1272,58 @@ mode: "server"
 listen: "0.0.0.0:8443"
 transport: "wssmux"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
-cert_file: "/path/to/server.crt"
-key_file: "/path/to/server.key"
+# فایل‌های گواهینامه TLS (الزامی برای wssmux)
+cert_file: "/path/to/server.crt"  # مسیر فایل گواهینامه TLS
+key_file: "/path/to/server.key"   # مسیر فایل private key TLS
 
 maps:
   - type: "tcp"
     bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
+    target: "127.0.0.1:2066"
   - type: "udp"
     bind: "0.0.0.0:2066"
     target: "127.0.0.1:2066"
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # تنظیمات TCP (برای اتصالات محلی)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات WebSocket (برای tunnel)
+  websocket_read_buffer: 262144   # 256KB (بایت)
+  websocket_write_buffer: 262144  # 256KB (بایت)
+  websocket_compression: false    # فعال/غیرفعال کردن compression
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-max_sessions: 0
-heartbeat: 10
-verbose: false
+max_sessions: 0      # 0 = نامحدود، توصیه: 0 یا 1000+
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای سرور:**
@@ -1114,42 +1337,53 @@ netrix -config server-wss.yaml
 ```yaml
 mode: "client"
 psk: "your_secret_key_here"
-profile: "balanced"
+profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
 paths:
   - transport: "wssmux"
     addr: "SERVER_IP:8443"
-    connection_pool: 8
-    aggressive_pool: false
-    retry_interval: 3
-    dial_timeout: 10
+    connection_pool: 8        # تعداد تونل همزمان
+    aggressive_pool: false    # reconnect تهاجمی در صورت خطا
+    retry_interval: 3         # ثانیه
+    dial_timeout: 10          # ثانیه
 
 smux:
-  keepalive: 8
-  max_recv: 8388608
-  max_stream: 8388608
-  frame_size: 32768
+  keepalive: 8          # ثانیه
+  max_recv: 8388608     # 8MB (بایت)
+  max_stream: 8388608   # 8MB (بایت)
+  frame_size: 32768     # 32KB (بایت)
 
 advanced:
-  websocket_read_buffer: 262144
-  websocket_write_buffer: 262144
-  websocket_compression: false
+  # تنظیمات TCP (برای اتصالات محلی)
   tcp_nodelay: true
-  tcp_keepalive: 15
-  tcp_read_buffer: 4194304
-  tcp_write_buffer: 4194304
-  udp_read_buffer: 4194304
-  udp_write_buffer: 4194304
-  cleanup_interval: 3
-  session_timeout: 30
-  connection_timeout: 60
-  stream_timeout: 120
-  max_connections: 2000
-  max_udp_flows: 1000
-  udp_flow_timeout: 300
+  tcp_keepalive: 15     # ثانیه
+  tcp_read_buffer: 4194304   # 4MB (بایت)
+  tcp_write_buffer: 4194304  # 4MB (بایت)
+  
+  # تنظیمات WebSocket (برای tunnel)
+  websocket_read_buffer: 262144   # 256KB (بایت)
+  websocket_write_buffer: 262144  # 256KB (بایت)
+  websocket_compression: false    # فعال/غیرفعال کردن compression
+  
+  # مدیریت اتصال
+  cleanup_interval: 3      # ثانیه
+  session_timeout: 30      # ثانیه
+  connection_timeout: 60   # ثانیه
+  stream_timeout: 120      # ثانیه
+  max_connections: 2000    # حداکثر اتصال همزمان
+  
+  # مدیریت UDP Flow
+  max_udp_flows: 1000      # حداکثر UDP flow همزمان
+  udp_flow_timeout: 300    # ثانیه (5 دقیقه)
+  
+  # اندازه Buffer Pool (اختیاری - 0 = استفاده از پیش‌فرض)
+  buffer_pool_size: 0           # پیش‌فرض: 131072 (128KB)
+  large_buffer_pool_size: 0     # پیش‌فرض: 131072 (128KB)
+  udp_frame_pool_size: 0        # پیش‌فرض: 65856 (64KB+256)
+  udp_data_slice_size: 0        # پیش‌فرض: 1500 (MTU)
 
-heartbeat: 10
-verbose: false
+heartbeat: 10        # ثانیه (پیش‌فرض: 10)
+verbose: false       # فعال‌سازی لاگ‌های دقیق
 ```
 
 **اجرای کلاینت:**
