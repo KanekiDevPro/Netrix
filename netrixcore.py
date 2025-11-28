@@ -17,7 +17,6 @@ NETRIX_RELEASE_URLS = {
     "arm64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-arm64.tar.gz"
 }
 
-
 FG_BLACK = "\033[30m"
 FG_RED = "\033[31m"
 FG_GREEN = "\033[32m"
@@ -1114,8 +1113,47 @@ def create_server_tunnel():
                 "udp_data_slice_size": 0
             }
         
-        # Maps will be added at the end of YAML file
+        # Maps (TCP/UDP) - Port Mappings
         maps = []
+        print(f"\n  {BOLD}{FG_CYAN}Port Mappings:{RESET} {FG_YELLOW}(optional - leave empty to skip){RESET}")
+        print(f"  {FG_WHITE}Format:{RESET} Multiple ports with comma {FG_GREEN}(2066,9988,6665){RESET} or Range {FG_GREEN}(2066-2070){RESET}")
+        print(f"  {FG_WHITE}Note:{RESET} Bind and Target ports will be the same {FG_CYAN}(0.0.0.0:2066 -> 127.0.0.1:2066){RESET}")
+        
+        # TCP Ports
+        try:
+            tcp_input = input(f"\n  {BOLD}{FG_GREEN}TCP Ports:{RESET} {FG_WHITE}(e.g., 2066,9988 or 2066-2070){RESET} ").strip()
+        except KeyboardInterrupt:
+            print(f"\n\n  {FG_YELLOW}Cancelled.{RESET}")
+            raise UserCancelled()
+        if tcp_input:
+            try:
+                tcp_ports = parse_ports(tcp_input)
+                for port in tcp_ports:
+                    bind_addr = f"0.0.0.0:{port}"
+                    target_addr = f"127.0.0.1:{port}"
+                    maps.append({"type": "tcp", "bind": bind_addr, "target": target_addr})
+                if tcp_ports:
+                    c_ok(f"  ✅ Added {FG_GREEN}{len(tcp_ports)}{RESET} TCP mapping(s)")
+            except ValueError as e:
+                c_err(f"  ⚠️  Invalid TCP ports: {FG_RED}{e}{RESET}")
+        
+        # UDP Ports
+        try:
+            udp_input = input(f"  {BOLD}{FG_GREEN}UDP Ports:{RESET} {FG_WHITE}(e.g., 2066,9988 or 2066-2070){RESET} ").strip()
+        except KeyboardInterrupt:
+            print(f"\n\n  {FG_YELLOW}Cancelled.{RESET}")
+            raise UserCancelled()
+        if udp_input:
+            try:
+                udp_ports = parse_ports(udp_input)
+                for port in udp_ports:
+                    bind_addr = f"0.0.0.0:{port}"
+                    target_addr = f"127.0.0.1:{port}"
+                    maps.append({"type": "udp", "bind": bind_addr, "target": target_addr})
+                if udp_ports:
+                    c_ok(f"  ✅ Added {FG_GREEN}{len(udp_ports)}{RESET} UDP mapping(s)")
+            except ValueError as e:
+                c_err(f"  ⚠️  Invalid UDP ports: {FG_RED}{e}{RESET}")
         
         cfg = {
             "tport": tport,
