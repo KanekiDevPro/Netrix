@@ -1,8 +1,7 @@
 # Netrix - Advanced Reverse Tunneling Solution
 
 [![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat&logo=go)](https://golang.org/)
-[![License](https://img.shields.io/badge/License-Commercial-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/Release-Stable-green.svg)](https://github.com/yourusername/netrix/releases)
+
 
 ---
 
@@ -80,6 +79,16 @@ Netrix uses a multi-layer architecture:
 
 For easier tunnel management, we provide a Python management script that handles configuration, installation, and system optimization automatically.
 
+### 🔐 License Purchase
+
+**Important:** To use Netrix, you need to purchase a license first.
+
+**Purchase License:**
+- 🤖 **Telegram Bot**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
+- 👤 **Developer Contact**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+
+After purchasing the license, you will receive a license key that you need to activate before using Netrix.
+
 ### Installation
 
 ```bash
@@ -102,6 +111,7 @@ ipt is installed as `netrixcore` command and can be run from anywhere in your sy
 - ✅ **Certificate Management**: Automatic Let's Encrypt certificate acquisition
 - ✅ **Profile Selection**: Choose from 4 performance profiles
 - ✅ **Port Mapping**: Easy TCP/UDP port mapping with ranges support
+- 🔐 **License Management**: Built-in license activation and validation
 
 ### Usage
 
@@ -119,8 +129,15 @@ netrixcore
 5. **Delete** - Remove tunnels and their configuration files
 6. **Netrix Core Management** - Install/Update/Delete Netrix core binary
 7. **System Optimizer** - Optimize Linux kernel parameters for high traffic
-# Reboot for full effect
-```
+
+### 📞 Support & Contact
+
+**Purchase License:**
+- 🤖 **Telegram Bot**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
+
+**Developer:**
+- 👤 **Telegram**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+
 
 ---
 
@@ -815,6 +832,16 @@ Netrix از معماری چند لایه استفاده می‌کند:
 
 برای مدیریت آسان‌تر تانل‌ها، یک اسکریپت مدیریتی پایتون ارائه می‌دهیم که به صورت خودکار تنظیمات، نصب و بهینه‌سازی سیستم را انجام می‌دهد.
 
+### 🔐 خرید لایسنس
+
+**مهم:** برای استفاده از Netrix، ابتدا باید لایسنس خریداری کنید.
+
+**خرید لایسنس:**
+- 🤖 **ربات تلگرام**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
+- 👤 **تماس با سازنده**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+
+پس از خرید لایسنس، یک کلید لایسنس دریافت خواهید کرد که باید قبل از استفاده از Netrix آن را فعال کنید.
+
 ### نصب
 
 ```bash
@@ -837,6 +864,7 @@ wget https://raw.githubusercontent.com/YOUR_USERNAME/netrix/main/netrix.py -O /u
 - ✅ **مدیریت گواهینامه**: دریافت خودکار گواهینامه Let's Encrypt
 - ✅ **انتخاب پروفایل**: انتخاب از 4 پروفایل عملکردی
 - ✅ **نگاشت پورت**: نگاشت آسان پورت‌های TCP/UDP با پشتیبانی از محدوده
+- 🔐 **مدیریت لایسنس**: فعال‌سازی و اعتبارسنجی لایسنس داخلی
 
 ### نحوه استفاده
 
@@ -854,6 +882,15 @@ netrixcore
 5. **حذف** - حذف تانل‌ها و فایل‌های کانفیگ آن‌ها
 6. **مدیریت هسته Netrix** - نصب/آپدیت/حذف باینری هسته Netrix
 7. **بهینه‌ساز سیستم** - بهینه‌سازی پارامترهای کرنل لینوکس برای ترافیک بالا
+
+### 📞 پشتیبانی و تماس
+
+**خرید لایسنس:**
+- 🤖 **ربات تلگرام**: [@YOUR_BOT_USERNAME](https://t.me/YOUR_BOT_USERNAME)
+
+**سازنده:**
+- 👤 **تلگرام**: [@YOUR_TELEGRAM_USERNAME](https://t.me/YOUR_TELEGRAM_USERNAME)
+
 
 </div>
 
