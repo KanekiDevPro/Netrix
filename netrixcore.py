@@ -1,6 +1,22 @@
-import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json
+#!/usr/bin/env python3
+import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json, stat
 from typing import Optional, Dict, Any, List
 from pathlib import Path
+
+def ensure_executable():
+    """Make this script executable if it's not already"""
+    try:
+        script_path = os.path.abspath(__file__)
+        current_permissions = os.stat(script_path).st_mode
+        
+        if not (current_permissions & stat.S_IXUSR):
+            os.chmod(script_path, current_permissions | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            print(f"\033[32m✓ Made script executable: {script_path}\033[0m")
+    except Exception:
+        pass
+
+
+ensure_executable()
 
 try:
     import yaml
@@ -11,7 +27,7 @@ except ImportError:
 
 ROOT_DIR = Path("/root")
 NETRIX_BINARY = "/usr/local/bin/netrix"
-NETRIX_RELEASE_URL = "https://github.com/karrari-dev/netrix/releases/latest/download/netrix-{arch}"  # URL دانلود هسته
+NETRIX_RELEASE_URL = "https://github.com/karrari-dev/netrix/releases/latest/download/netrix-{arch}"
 
 
 FG_BLACK = "\033[30m"
