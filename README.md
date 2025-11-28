@@ -92,23 +92,7 @@ After purchasing the license, you will receive a license key that you need to ac
 ### Installation
 
 ```bash
-# Install dependencies
-apt install python3 python3-pip -y
-pip3 install pyyaml
-
-# Download script
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py
-chmod +x /usr/local/bin/netrixcore.py
-
-# Run
-python3 /usr/local/bin/netrixcore.py
-```
-
-**Or create an alias for easier use:**
-```bash
-echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc
-source ~/.bashrc
-netrixcore
+wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py && chmod +x /usr/local/bin/netrixcore.py && echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc && source ~/.bashrc && netrixcore
 ```
 
 ### Features
@@ -855,23 +839,7 @@ Netrix از معماری چند لایه استفاده می‌کند:
 ### نصب
 
 ```bash
-# نصب وابستگی‌ها
-apt install python3 python3-pip -y
-pip3 install pyyaml
-
-# دانلود اسکریپت
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py
-chmod +x /usr/local/bin/netrixcore.py
-
-# اجرا
-python3 /usr/local/bin/netrixcore.py
-```
-
-**یا برای استفاده راحت‌تر، یک alias بسازید:**
-```bash
-echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc
-source ~/.bashrc
-netrixcore
+wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py && chmod +x /usr/local/bin/netrixcore.py && echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc && source ~/.bashrc && netrixcore
 ```
 
 
