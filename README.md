@@ -95,9 +95,6 @@ After purchasing the license, you will receive a license key that you need to ac
 # Download and install
 wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore
 chmod +x /usr/local/bin/netrixcore
-
-# Run
-netrixcore
 ```
 
 ### Features
@@ -847,9 +844,6 @@ Netrix از معماری چند لایه استفاده می‌کند:
 # دانلود و نصب
 wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore
 chmod +x /usr/local/bin/netrixcore
-
-# اجرا
-netrixcore
 ```
 
 
