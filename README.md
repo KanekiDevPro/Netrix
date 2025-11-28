@@ -184,14 +184,6 @@ transport: "tcpmux"
 psk: "your_secret_key_here"
 profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-
 smux:
   keepalive: 8          # seconds
   max_recv: 8388608     # 8MB (bytes)
@@ -225,6 +217,14 @@ advanced:
 max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
 heartbeat: 10        # seconds (default: 10)
 verbose: false       # enable verbose logging
+
+maps:
+  - type: "tcp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
+  - type: "udp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
 ```
 
 **Run server:**
@@ -301,14 +301,6 @@ transport: "kcpmux"
 psk: "your_secret_key_here"
 profile: "latency"
 
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-
 smux:
   keepalive: 3
   max_recv: 4194304
@@ -355,6 +347,14 @@ advanced:
 max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
 heartbeat: 10        # seconds (default: 10)
 verbose: false       # enable verbose logging
+
+maps:
+  - type: "tcp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:22"
+  - type: "udp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
 ```
 
 **Run server:**
@@ -444,14 +444,6 @@ transport: "wsmux"
 psk: "your_secret_key_here"
 profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-
 smux:
   keepalive: 8          # seconds
   max_recv: 8388608     # 8MB (bytes)
@@ -490,6 +482,14 @@ advanced:
 max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
 heartbeat: 10        # seconds (default: 10)
 verbose: false       # enable verbose logging
+
+maps:
+  - type: "tcp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
+  - type: "udp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
 ```
 
 **Run server:**
@@ -583,14 +583,6 @@ profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
 cert_file: "/path/to/server.crt"  # TLS certificate file path
 key_file: "/path/to/server.key"   # TLS private key file path
 
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-
 smux:
   keepalive: 8          # seconds
   max_recv: 8388608     # 8MB (bytes)
@@ -629,6 +621,14 @@ advanced:
 max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
 heartbeat: 10        # seconds (default: 10)
 verbose: false       # enable verbose logging
+
+maps:
+  - type: "tcp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
+  - type: "udp"
+    bind: "0.0.0.0:2066"
+    target: "127.0.0.1:2066"
 ```
 
 **Run server:**
