@@ -92,12 +92,12 @@ After purchasing the license, you will receive a license key that you need to ac
 ### Installation
 
 ```bash
+# Download and install
 wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore
-```
+chmod +x /usr/local/bin/netrixcore
 
-**Note:** The script is installed as `netrixcore` command and can be run from anywhere in your system.
-ipt is installed as `netrixcore` command and can be run from anywhere in your system.
-
+# Run
+netrixcore
 ```
 
 ### Features
@@ -844,12 +844,13 @@ Netrix از معماری چند لایه استفاده می‌کند:
 ### نصب
 
 ```bash
+# دانلود و نصب
 wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore
-# یا با curl:
-# curl -o /usr/local/bin/netrixcore https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py
-```
+chmod +x /usr/local/bin/netrixcore
 
-**نکته:** اسکریپت به عنوان دستور `netrixcore` نصب می‌شود و می‌توانید از هر جایی در سیستم آن را اجرا کنید.
+# اجرا
+netrixcore
+```
 
 
 
