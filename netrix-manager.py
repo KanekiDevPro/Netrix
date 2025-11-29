@@ -216,27 +216,27 @@ def get_default_smux_config(profile: str = "balanced") -> dict:
     profiles = {
         "balanced": {
             "keepalive": 8,
-            "max_recv": 8388608,      # 8MB (بهینه برای throughput)
-            "max_stream": 8388608,    # 8MB (بهینه برای throughput)
-            "frame_size": 32768       # 32KB (استاندارد)
+            "max_recv": 8388608,      
+            "max_stream": 8388608,   
+            "frame_size": 32768       
         },
         "aggressive": {
             "keepalive": 5,
-            "max_recv": 16777216,     # 16MB (مثل Hysteria - برای سرعت بالا)
-            "max_stream": 16777216,   # 16MB (مثل Hysteria - برای سرعت بالا)
-            "frame_size": 32768       # 32KB (استاندارد)
+            "max_recv": 16777216,    
+            "max_stream": 16777216,  
+            "frame_size": 32768       
         },
         "latency": {
             "keepalive": 3,
-            "max_recv": 4194304,      # 4MB (متعادل برای latency)
-            "max_stream": 4194304,    # 4MB (متعادل برای latency)
-            "frame_size": 32768       # 32KB (بهینه برای performance)
+            "max_recv": 4194304,     
+            "max_stream": 4194304,   
+            "frame_size": 32768     
         },
         "cpu-efficient": {
             "keepalive": 10,
-            "max_recv": 8388608,      # 8MB
-            "max_stream": 8388608,    # 8MB
-            "frame_size": 32768       # 32KB
+            "max_recv": 8388608,     
+            "max_stream": 8388608,   
+            "frame_size": 32768      
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
@@ -249,35 +249,35 @@ def get_default_kcp_config(profile: str = "balanced") -> dict:
             "interval": 10,
             "resend": 2,
             "nc": 1,
-            "sndwnd": 768,       # بهینه برای throughput (مثل main/netrix.go)
-            "rcvwnd": 768,       # بهینه برای throughput (مثل main/netrix.go)
+            "sndwnd": 768,      
+            "rcvwnd": 768,      
             "mtu": 1400
         },
         "aggressive": {
             "nodelay": 1,
-            "interval": 8,       # کاهش برای بهتر شدن latency و jitter
+            "interval": 8,      
             "resend": 2,
             "nc": 1,
-            "sndwnd": 1024,      # بهینه برای throughput maximum
-            "rcvwnd": 1024,      # بهینه برای throughput maximum
+            "sndwnd": 1024,    
+            "rcvwnd": 1024,     
             "mtu": 1400
         },
         "latency": {
             "nodelay": 1,
-            "interval": 8,       # کم برای low latency
+            "interval": 8,    
             "resend": 2,
             "nc": 1,
-            "sndwnd": 768,       # بهینه برای throughput
-            "rcvwnd": 768,       # بهینه برای throughput
+            "sndwnd": 768,      
+            "rcvwnd": 768,      
             "mtu": 1350
         },
         "cpu-efficient": {
             "nodelay": 0,
             "interval": 40,
             "resend": 2,
-            "nc": 0,             # Disable NC برای CPU کم
-            "sndwnd": 512,       # متعادل
-            "rcvwnd": 512,       # متعادل
+            "nc": 0,            
+            "sndwnd": 512,     
+            "rcvwnd": 512,       
             "mtu": 1400
         }
     }
@@ -287,13 +287,13 @@ def get_default_advanced_config(transport: str) -> dict:
     """تنظیمات پیش‌فرض Advanced بر اساس transport - تمام فلگ‌های قابل تنظیم"""
     base_config = {
         "tcp_nodelay": True,
-        "tcp_keepalive": 60,          # افزایش از 15s به 60s برای جلوگیری از قطع شدن SSH
-        "tcp_read_buffer": 4194304,   # 4MB (متعادل - مناسب برای download بالا)
-        "tcp_write_buffer": 4194304,  # 4MB (متعادل - مناسب برای سرورهای ضعیف و قوی)
-        "cleanup_interval": 30,       # افزایش از 3s به 30s - cleanup خیلی زیاد باعث overhead میشه
-        "session_timeout": 300,       # افزایش از 30s به 5 دقیقه برای جلوگیری از cleanup زودهنگام
-        "connection_timeout": 120,    # افزایش از 1 دقیقه به 2 دقیقه
-        "stream_timeout": 300,        # افزایش از 2 دقیقه به 5 دقیقه
+        "tcp_keepalive": 60,          
+        "tcp_read_buffer": 4194304,  
+        "tcp_write_buffer": 4194304,
+        "cleanup_interval": 30,     
+        "session_timeout": 300,    
+        "connection_timeout": 120, 
+        "stream_timeout": 300,      
         "max_connections": 2000,
         "max_udp_flows": 1000,
         "udp_flow_timeout": 300,
@@ -303,13 +303,13 @@ def get_default_advanced_config(transport: str) -> dict:
 
     if transport in ("kcpmux", "kcp"):
         base_config.update({
-            "udp_read_buffer": 4194304,   # 4MB (متعادل - مناسب برای ترافیک بالا)
-            "udp_write_buffer": 4194304   # 4MB (متعادل - مناسب برای ترافیک بالا)
+            "udp_read_buffer": 4194304,   
+            "udp_write_buffer": 4194304  
         })
     elif transport in ("wsmux", "wssmux"):
         base_config.update({
-            "websocket_read_buffer": 262144,  # 256KB
-            "websocket_write_buffer": 262144,  # 256KB
+            "websocket_read_buffer": 262144, 
+            "websocket_write_buffer": 262144,  
             "websocket_compression": False
         })
     
@@ -2629,3 +2629,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
