@@ -127,7 +127,7 @@ netrixcore
 ### 📞 Support & Contact
 
 **Purchase License:**
-- 🤖 **Telegram Bot**: [@mnxcore_bote](https://t.me/mnxcore_bot)
+- 🤖 **Telegram Bot**: [@mnxcore_bot](https://t.me/mnxcore_bot)
 
 **Developer:**
 - 👤 **Telegram**: [@g0dline](https://t.me/g0dline)
