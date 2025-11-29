@@ -92,7 +92,7 @@ After purchasing the license, you will receive a license key that you need to ac
 ### Installation
 
 ```bash
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py && chmod +x /usr/local/bin/netrixcore.py && echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc && source ~/.bashrc && netrixcore
+wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc && netrix-manager
 ```
 
 ### Features
@@ -112,7 +112,7 @@ wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O
 Run the script and follow the interactive menu:
 
 ```bash
-netrixcore
+netrix-manager
 ```
 
 **Main Menu Options:**
@@ -839,7 +839,7 @@ Netrix از معماری چند لایه استفاده می‌کند:
 ### نصب
 
 ```bash
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O /usr/local/bin/netrixcore.py && chmod +x /usr/local/bin/netrixcore.py && echo 'alias netrixcore="python3 /usr/local/bin/netrixcore.py"' >> ~/.bashrc && source ~/.bashrc && netrixcore
+wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc && netrix-manager
 ```
 
 
@@ -862,7 +862,7 @@ wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py -O
 اسکریپت را اجرا کنید و از منوی تعاملی استفاده کنید:
 
 ```bash
-netrixcore
+netrix-manager
 ```
 
 **گزینه‌های منوی اصلی:**
