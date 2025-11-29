@@ -759,13 +759,13 @@ def run_tunnel(config_path: Path):
     
     service_name = f"netrix-{config_path.stem}"
     try:
-        subprocess.run(["systemctl", "enable", service_name], check=False)
+        subprocess.run(["systemctl", "enable", service_name], check=False, timeout=5)
         try:
             result = subprocess.run(
                 ["systemctl", "start", service_name],
                 capture_output=True,
                 text=True,
-                timeout=10
+                timeout=30  # افزایش از 10s به 30s
             )
             if result.returncode == 0:
                 return True
@@ -774,6 +774,19 @@ def run_tunnel(config_path: Path):
                 return False
         except subprocess.TimeoutExpired:
             c_err("Failed to start service: timeout (service may be hanging)")
+            # سعی کن ببین service واقعاً start شده یا نه
+            try:
+                check_result = subprocess.run(
+                    ["systemctl", "is-active", service_name],
+                    capture_output=True,
+                    text=True,
+                    timeout=3
+                )
+                if check_result.returncode == 0 and check_result.stdout.strip() == "active":
+                    c_warn("Service is actually running (start command timed out but service is active)")
+                    return True
+            except:
+                pass
             return False
     except Exception as e:
         c_err(f"Failed to start tunnel: {e}")
@@ -819,6 +832,11 @@ Type=simple
 ExecStart={netrix_bin} -config {config_path}
 Restart=always
 RestartSec=3
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillMode=mixed
+KillSignal=SIGTERM
+SendSIGKILL=yes
 User=root
 LimitNOFILE=1048576
 LimitNPROC=1048576
@@ -1757,7 +1775,7 @@ def restart_tunnel_menu():
                     ["systemctl", "restart", service_name],
                     capture_output=True,
                     text=True,
-                    timeout=15
+                    timeout=45  # افزایش از 15s به 45s
                 )
                 if result.returncode == 0:
                     print(f" {FG_GREEN}✅{RESET}")
@@ -1767,7 +1785,21 @@ def restart_tunnel_menu():
                     c_err(f"  ❌ Failed to restart tunnel: {FG_RED}{result.stderr}{RESET}")
             except subprocess.TimeoutExpired:
                 print(f" {FG_YELLOW}⚠️{RESET}")
-                c_err(f"  ❌ Failed to restart tunnel: timeout (service may be hanging)")
+                c_warn(f"  ⚠️  Restart command timed out - checking service status...")
+                # چک کن ببین service واقعاً restart شده یا نه
+                try:
+                    check_result = subprocess.run(
+                        ["systemctl", "is-active", service_name],
+                        capture_output=True,
+                        text=True,
+                        timeout=3
+                    )
+                    if check_result.returncode == 0 and check_result.stdout.strip() == "active":
+                        c_ok(f"  ✅ Service is running (restart completed despite timeout)")
+                    else:
+                        c_err(f"  ❌ Service is not running - restart failed")
+                except:
+                    c_err(f"  ❌ Could not verify service status")
             except Exception as e:
                 print(f" {FG_RED}❌{RESET}")
                 c_err(f"  ❌ Failed to restart tunnel: {FG_RED}{e}{RESET}")
@@ -2527,7 +2559,7 @@ def main_menu():
         else:
             print(f"    {FG_RED}Core Status: ❌ Not Installed{RESET}")
         
-        print(f"    {FG_CYAN}Support: {FG_WHITE}@g0dline{RESET}")
+        print(f"    {FG_CYAN}Support: {FG_WHITE}@Karrari_Dev{RESET}")
         print()
         print(f"  {BOLD}{FG_GREEN}1){RESET} Create Tunnel")
         print(f"  {BOLD}{FG_BLUE}2){RESET} Status")
@@ -2572,5 +2604,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
