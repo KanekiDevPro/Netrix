@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Netrix Core - اسکریپت مدیریت تانل Netrix
+"""
 import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json, stat
 from typing import Optional, Dict, Any, List
 from pathlib import Path
@@ -187,10 +190,13 @@ def configure_buffer_pools() -> dict:
     config["large_buffer_pool_size"] = large_buffer_pool_size
     
     udp_frame_pool_size = ask_int(
-        f"  {BOLD}UDP Frame Pool Size:{RESET} {FG_WHITE}(bytes, default: 65856 = 64KB+256, 0 = use default){RESET}",
+        f"  {BOLD}UDP Frame Pool Size:{RESET} {FG_WHITE}(bytes, min: 65856 = 64KB+256, 0 = use default){RESET}",
         min_=0,
         default=0
     )
+    if udp_frame_pool_size > 0 and udp_frame_pool_size < 65856:
+        c_warn(f"  ⚠️  UDP Frame Pool Size too small ({udp_frame_pool_size}), minimum is 65856 bytes")
+        c_warn(f"  ⚠️  Core will automatically use minimum size")
     config["udp_frame_pool_size"] = udp_frame_pool_size
     
     udp_data_slice_size = ask_int(
@@ -212,104 +218,112 @@ def get_config_path(tport: int) -> Path:
     return ROOT_DIR / f"server{tport}.yaml"
 
 def get_default_smux_config(profile: str = "balanced") -> dict:
-    """تنظیمات پیش‌فرض SMUX بر اساس profile"""
+    """تنظیمات پیش‌فرض SMUX بر اساس profile - بهینه شده برای scale بالا"""
     profiles = {
         "balanced": {
-            "keepalive": 8,
-            "max_recv": 8388608,      
-            "max_stream": 8388608,   
-            "frame_size": 32768       
+            "keepalive": 10,
+            "max_recv": 16777216, 
+            "max_stream": 16777216,  
+            "frame_size": 32768,
+            "version": 2,
+            "mux_con": 10      
         },
         "aggressive": {
-            "keepalive": 5,
-            "max_recv": 16777216,    
-            "max_stream": 16777216,  
-            "frame_size": 32768       
+            "keepalive": 10,  
+            "max_recv": 33554432, 
+            "max_stream": 33554432, 
+            "frame_size": 32768,
+            "version": 2,                 
+            "mux_con": 10                 
         },
         "latency": {
             "keepalive": 3,
-            "max_recv": 4194304,     
-            "max_stream": 4194304,   
-            "frame_size": 32768     
+            "max_recv": 4194304, 
+            "max_stream": 4194304, 
+            "frame_size": 32768,
+            "version": 2,                   
+            "mux_con": 10                   
         },
         "cpu-efficient": {
             "keepalive": 10,
-            "max_recv": 8388608,     
-            "max_stream": 8388608,   
-            "frame_size": 32768      
+            "max_recv": 4194304, 
+            "max_stream": 4194304, 
+            "frame_size": 32768,
+            "version": 2,                    
+            "mux_con": 10                     
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
 
 def get_default_kcp_config(profile: str = "balanced") -> dict:
-    """تنظیمات پیش‌فرض KCP بر اساس profile"""
+    """تنظیمات پیش‌فرض KCP بر اساس profile - بهینه شده برای کاهش CPU"""
     profiles = {
         "balanced": {
-            "nodelay": 1,
-            "interval": 10,
+            "nodelay": 0, 
+            "interval": 20, 
             "resend": 2,
-            "nc": 1,
-            "sndwnd": 768,      
-            "rcvwnd": 768,      
+            "nc": 0, 
+            "sndwnd": 512,
+            "rcvwnd": 512,
             "mtu": 1400
         },
         "aggressive": {
-            "nodelay": 1,
-            "interval": 8,      
+            "nodelay": 0,  
+            "interval": 15,
             "resend": 2,
-            "nc": 1,
-            "sndwnd": 1024,    
-            "rcvwnd": 1024,     
+            "nc": 0, 
+            "sndwnd": 1024, 
+            "rcvwnd": 1024,
             "mtu": 1400
         },
         "latency": {
-            "nodelay": 1,
-            "interval": 8,    
+            "nodelay": 1, 
+            "interval": 8,
             "resend": 2,
             "nc": 1,
-            "sndwnd": 768,      
-            "rcvwnd": 768,      
+            "sndwnd": 768,
+            "rcvwnd": 768,
             "mtu": 1350
         },
         "cpu-efficient": {
             "nodelay": 0,
             "interval": 40,
             "resend": 2,
-            "nc": 0,            
-            "sndwnd": 512,     
-            "rcvwnd": 512,       
+            "nc": 0,
+            "sndwnd": 256, 
+            "rcvwnd": 256,
             "mtu": 1400
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
 
 def get_default_advanced_config(transport: str) -> dict:
-    """تنظیمات پیش‌فرض Advanced بر اساس transport - تمام فلگ‌های قابل تنظیم"""
+    """تنظیمات پیش‌فرض Advanced بر اساس transport - بهینه شده برای scale بالا"""
     base_config = {
         "tcp_nodelay": True,
-        "tcp_keepalive": 60,          
-        "tcp_read_buffer": 4194304,  
-        "tcp_write_buffer": 4194304,
-        "cleanup_interval": 30,     
-        "session_timeout": 300,    
-        "connection_timeout": 120, 
-        "stream_timeout": 300,      
+        "tcp_keepalive": 15,
+        "tcp_read_buffer": 8388608,
+        "tcp_write_buffer": 8388608,
+        "cleanup_interval": 180,
+        "session_timeout": 21600,
+        "connection_timeout": 600,
+        "stream_timeout": 21600,
         "max_connections": 2000,
-        "max_udp_flows": 1000,
-        "udp_flow_timeout": 300,
+        "max_udp_flows": 5000,
+        "udp_flow_timeout": 600,
         "verbose": False
     }
     
 
     if transport in ("kcpmux", "kcp"):
         base_config.update({
-            "udp_read_buffer": 4194304,   
+            "udp_read_buffer": 4194304,  
             "udp_write_buffer": 4194304  
         })
     elif transport in ("wsmux", "wssmux"):
         base_config.update({
             "websocket_read_buffer": 262144, 
-            "websocket_write_buffer": 262144,  
+            "websocket_write_buffer": 262144, 
             "websocket_compression": False
         })
     
@@ -383,7 +397,7 @@ def get_certificate_with_acme(domain: str, email: str, port: int) -> tuple[Optio
         return None, None
     c_ok(f"  ✅ Account registered successfully")
     
-    # 5. صدور certificate (issue)
+
     print(f"\n  {FG_CYAN}🎫 Step 5/5:{RESET} {BOLD}Issuing certificate for {FG_GREEN}{domain}{RESET}...")
     print(f"     {FG_YELLOW}⚠️  Note:{RESET} acme.sh will use port {FG_CYAN}80{RESET} for verification {FG_WHITE}(not {port}){RESET}")
     print(f"     {FG_YELLOW}⚠️  Make sure port 80 is not in use, or we can temporarily stop nginx{RESET}")
@@ -481,7 +495,8 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
         "keepalive": smux_default["keepalive"],
         "max_recv": smux_default["max_recv"],
         "max_stream": smux_default["max_stream"],
-        "frame_size": smux_default["frame_size"]
+        "frame_size": smux_default["frame_size"],
+        "version": smux_default["version"],
     }
     
     if transport == "kcpmux":
@@ -515,7 +530,7 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
     
     yaml_data["verbose"] = cfg.get("verbose", False)
     
-    # Health check port (default: 19080)
+
     if "health_port" in cfg:
         yaml_data["health_port"] = cfg['health_port']
     
@@ -595,7 +610,9 @@ def create_client_config_file(cfg: dict) -> Path:
         "keepalive": smux_default["keepalive"],
         "max_recv": smux_default["max_recv"],
         "max_stream": smux_default["max_stream"],
-        "frame_size": smux_default["frame_size"]
+        "frame_size": smux_default["frame_size"],
+        "version": smux_default["version"],
+        "mux_con": cfg.get('mux_con', smux_default["mux_con"])
     }
     
     if any(p.get('transport') == 'kcpmux' for p in paths):
@@ -771,7 +788,7 @@ def run_tunnel(config_path: Path):
                 ["systemctl", "start", service_name],
                 capture_output=True,
                 text=True,
-                timeout=30  # افزایش از 10s به 30s
+                timeout=30 
             )
             if result.returncode == 0:
                 return True
@@ -780,7 +797,7 @@ def run_tunnel(config_path: Path):
                 return False
         except subprocess.TimeoutExpired:
             c_err("Failed to start service: timeout (service may be hanging)")
-            # سعی کن ببین service واقعاً start شده یا نه
+
             try:
                 check_result = subprocess.run(
                     ["systemctl", "is-active", service_name],
@@ -806,13 +823,13 @@ def stop_tunnel(config_path: Path) -> bool:
             ["systemctl", "stop", service_name],
             capture_output=True,
             text=True,
-            timeout=15  # افزایش از 10s به 15s برای graceful shutdown
+            timeout=5
         )
         return result.returncode == 0
     except subprocess.TimeoutExpired:
         c_warn(f"  ⚠️  Service stop timeout (forcing kill)...")
         try:
-            subprocess.run(["systemctl", "kill", "--signal=SIGKILL", service_name], timeout=5, check=False)
+            subprocess.run(["systemctl", "kill", "--signal=SIGKILL", service_name], timeout=3, check=False)
             return True
         except:
             return False
@@ -827,12 +844,11 @@ def restart_tunnel(config_path: Path) -> bool:
             ["systemctl", "restart", service_name],
             capture_output=True,
             text=True,
-            timeout=30  # 15s stop + 15s start
+            timeout=15 
         )
         if result.returncode == 0:
             return True
         else:
-            # اگر restart fail شد، چک کن ببین service فعاله یا نه
             try:
                 check_result = subprocess.run(
                     ["systemctl", "is-active", service_name],
@@ -847,7 +863,7 @@ def restart_tunnel(config_path: Path) -> bool:
             return False
     except subprocess.TimeoutExpired:
         c_warn(f"  ⚠️  Restart timeout - checking service status...")
-        # چک کن ببین service واقعاً restart شده یا نه
+
         try:
             check_result = subprocess.run(
                 ["systemctl", "is-active", service_name],
@@ -883,8 +899,8 @@ Type=simple
 ExecStart={netrix_bin} -config {config_path}
 Restart=always
 RestartSec=2
-TimeoutStartSec=15
-TimeoutStopSec=10
+TimeoutStartSec=10
+TimeoutStopSec=5
 KillMode=mixed
 KillSignal=SIGTERM
 FinalKillSignal=SIGKILL
@@ -1021,7 +1037,7 @@ def start_configure_menu():
 def create_server_tunnel():
     """ساخت تانل سرور (Iran)"""
     try:
-        # بررسی نصب بودن هسته
+
         if not ensure_netrix_available():
             clear()
             print(f"{BOLD}{FG_RED}╔══════════════════════════════════════════════════════════╗{RESET}")
@@ -1070,11 +1086,9 @@ def create_server_tunnel():
         profiles = {1: "balanced", 2: "aggressive", 3: "latency", 4: "cpu-efficient"}
         profile = profiles[profile_choice]
         
-        # Port Mappings - بعد از profile
         maps = []
         print(f"\n  {BOLD}{FG_CYAN}Port Mappings:{RESET} {FG_WHITE}(e.g., 2066,9988 or 2066-2070 | Press Enter to skip){RESET}")
         
-        # TCP Ports
         try:
             tcp_input = input(f"  {BOLD}TCP Ports:{RESET} ").strip()
         except KeyboardInterrupt:
@@ -1093,7 +1107,6 @@ def create_server_tunnel():
             except ValueError as e:
                 c_err(f"  ⚠️  Invalid: {e}")
         
-        # UDP Ports
         try:
             udp_input = input(f"  {BOLD}UDP Ports:{RESET} ").strip()
         except KeyboardInterrupt:
@@ -1247,7 +1260,6 @@ def create_server_tunnel():
                 "udp_data_slice_size": 0
             }
         
-        # ساخت کانفیگ
         cfg = {
             "tport": tport,
             "listen": f"0.0.0.0:{tport}",
@@ -1285,7 +1297,6 @@ def create_server_tunnel():
 def create_client_tunnel():
     """ساخت تانل کلاینت (Kharej)"""
     try:
-        # بررسی نصب بودن هسته
         if not ensure_netrix_available():
             clear()
             print(f"{BOLD}{FG_RED}╔══════════════════════════════════════════════════════════╗{RESET}")
@@ -1330,13 +1341,12 @@ def create_client_tunnel():
         profile_choice = ask_int(f"\n  {BOLD}Select profile:{RESET}", min_=1, max_=4, default=1)
         profiles = {1: "balanced", 2: "aggressive", 3: "latency", 4: "cpu-efficient"}
         profile = profiles[profile_choice]
-        
 
         paths = []
         
         print(f"\n  {BOLD}{FG_CYAN}Connection Settings:{RESET}")
         connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 4-8){RESET}", min_=1, max_=100, default=4)
-        
+        mux_con = ask_int(f"  {BOLD}Mux Con:{RESET} {FG_WHITE}(recommended: 10){RESET}", min_=1, max_=100, default=10)
         retry_interval = ask_int(f"  {BOLD}Retry Interval:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=3)
         dial_timeout = ask_int(f"  {BOLD}Dial Timeout:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=10)
         aggressive_pool = ask_yesno(f"  {BOLD}Aggressive Pool?{RESET} {FG_WHITE}(faster reconnect){RESET}", default=False)
@@ -1417,6 +1427,7 @@ def create_client_tunnel():
         cfg = {
             "psk": psk,
             "profile": profile,
+            "mux_con": mux_con,
             "paths": paths,
             "verbose": verbose,
             "heartbeat": heartbeat,
@@ -1497,7 +1508,7 @@ def view_tunnel_details(config_path: Path, tunnel: Dict[str,Any]):
     while True:
         clear()
         print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-        print(f"{BOLD}{FG_CYAN}║{RESET}                    {BOLD}Tunnel Details{RESET}                     {BOLD}{FG_CYAN}║{RESET}")
+        print(f"{BOLD}{FG_CYAN}║{RESET}                    {BOLD}Tunnel Details{RESET}                        {BOLD}{FG_CYAN}║{RESET}")
         print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
         print()
         
@@ -1520,7 +1531,6 @@ def view_tunnel_details(config_path: Path, tunnel: Dict[str,Any]):
         print(f"  {BOLD}{FG_BLUE}1){RESET} View Service Logs")
         print(f"  {BOLD}{FG_MAGENTA}2){RESET} View Live Logs")
         print(f"  {BOLD}{FG_GREEN}3){RESET} Health Check")
-        print(f"  {BOLD}{FG_CYAN}4){RESET} Reload Config (Hot Reload)")
         print(f"  {FG_WHITE}0){RESET} Back")
         print()
         
@@ -1538,10 +1548,8 @@ def view_tunnel_details(config_path: Path, tunnel: Dict[str,Any]):
             view_live_logs(config_path)
         elif choice == "3":
             check_tunnel_health(config_path)
-        elif choice == "4":
-            reload_tunnel_config(config_path)
         else:
-            c_err("  ❌ Invalid choice. Please select 0, 1, 2, 3, or 4.")
+            c_err("  ❌ Invalid choice. Please select 0, 1, 2, or 3.")
             pause()
 
 def view_service_logs(config_path: Path):
@@ -1549,7 +1557,7 @@ def view_service_logs(config_path: Path):
     service_name = f"netrix-{config_path.stem}"
     clear()
     print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-    print(f"{BOLD}{FG_CYAN}║{RESET}                     {BOLD}Service Logs{RESET}                      {BOLD}{FG_CYAN}║{RESET}")
+    print(f"{BOLD}{FG_CYAN}║{RESET}                     {BOLD}Service Logs{RESET}                         {BOLD}{FG_CYAN}║{RESET}")
     print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
     print()
     print(f"  {BOLD}Service:{RESET} {service_name}")
@@ -1600,7 +1608,7 @@ def check_tunnel_health(config_path: Path):
     
     clear()
     print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-    print(f"{BOLD}{FG_CYAN}║{RESET}                      {BOLD}Health Check{RESET}                      {BOLD}{FG_CYAN}║{RESET}")
+    print(f"{BOLD}{FG_CYAN}║{RESET}                     {BOLD}Health Check{RESET}                         {BOLD}{FG_CYAN}║{RESET}")
     print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
     print()
     
@@ -1645,7 +1653,14 @@ def check_tunnel_health(config_path: Path):
                             print(f"    {BOLD}Streams:{RESET} {FG_CYAN}{streams}{RESET}")
                             print(f"    {BOLD}RTT:{RESET} {FG_CYAN}{rtt_ms} ms{RESET}")
                             
-                            if "tcp_in_mb" in data:
+                            if "tcp_in" in data and isinstance(data["tcp_in"], dict):
+                                print(f"    {BOLD}TCP In:{RESET} {FG_CYAN}{data['tcp_in']['formatted']}{RESET}")
+                                print(f"    {BOLD}TCP Out:{RESET} {FG_CYAN}{data['tcp_out']['formatted']}{RESET}")
+                                print(f"    {BOLD}UDP In:{RESET} {FG_CYAN}{data['udp_in']['formatted']}{RESET}")
+                                print(f"    {BOLD}UDP Out:{RESET} {FG_CYAN}{data['udp_out']['formatted']}{RESET}")
+                                if "total_traffic" in data:
+                                    print(f"    {BOLD}Total Traffic:{RESET} {FG_GREEN}{data['total_traffic']['formatted']}{RESET}")
+                            elif "tcp_in_mb" in data:
                                 print(f"    {BOLD}TCP In:{RESET} {FG_CYAN}{data['tcp_in_mb']:.2f} MB{RESET}")
                                 print(f"    {BOLD}TCP Out:{RESET} {FG_CYAN}{data['tcp_out_mb']:.2f} MB{RESET}")
                                 print(f"    {BOLD}UDP In:{RESET} {FG_CYAN}{data['udp_in_mb']:.2f} MB{RESET}")
@@ -1668,67 +1683,6 @@ def check_tunnel_health(config_path: Path):
         except Exception as e:
             print(f"    {FG_RED}❌ Error: {e}{RESET}")
         print()
-    
-    pause()
-
-def reload_tunnel_config(config_path: Path):
-    """Reload کردن config بدون restart (Hot Reload)"""
-    service_name = f"netrix-{config_path.stem}"
-    pid = get_service_pid(config_path)
-    
-    clear()
-    print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-    print(f"{BOLD}{FG_CYAN}║{RESET}                    {BOLD}Config Hot Reload{RESET}                     {BOLD}{FG_CYAN}║{RESET}")
-    print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
-    print()
-    
-    if not pid:
-        c_err("  ❌ Tunnel is not running")
-        c_warn("  ⚠️  Cannot reload config for stopped tunnel")
-        pause()
-        return
-    
-    print(f"  {BOLD}Service:{RESET} {service_name}")
-    print(f"  {BOLD}PID:{RESET} {pid}")
-    print(f"  {BOLD}Config:{RESET} {config_path}")
-    print()
-    
-    print(f"  {FG_YELLOW}⚠️  Note:{RESET} Hot reload will reload:")
-    print(f"     • Verbose logging")
-    print(f"     • Heartbeat interval")
-    print(f"     • Advanced settings")
-    print(f"     • SMUX/KCP settings (for new connections)")
-    print(f"     • MaxSessions (for new connections)")
-    print()
-    print(f"  {FG_YELLOW}⚠️  Changes to mode, listen, transport, maps, paths, PSK,")
-    print(f"     cert_file, or key_file require a full restart.")
-    print()
-    
-    if not ask_yesno(f"  {BOLD}Reload config now?{RESET}", default=True):
-        return
-    
-    print(f"\n  {FG_CYAN}Sending reload signal...{RESET}", end='', flush=True)
-    try:
-        result = subprocess.run(
-            ["kill", "-HUP", str(pid)],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-        
-        if result.returncode == 0:
-            print(f" {FG_GREEN}✅{RESET}")
-            c_ok("  ✅ Config reload signal sent successfully")
-            print(f"  {FG_WHITE}Check service logs to verify reload status{RESET}")
-        else:
-            print(f" {FG_RED}❌{RESET}")
-            c_err(f"  ❌ Failed to send reload signal: {result.stderr}")
-    except subprocess.TimeoutExpired:
-        print(f" {FG_YELLOW}⚠️{RESET}")
-        c_err(f"  ❌ Failed to send reload signal: timeout")
-    except Exception as e:
-        print(f" {FG_RED}❌{RESET}")
-        c_err(f"  ❌ Error: {FG_RED}{e}{RESET}")
     
     pause()
 
@@ -1791,7 +1745,7 @@ def restart_tunnel_menu():
     """منوی ریستارت تانل"""
     clear()
     print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-    print(f"{BOLD}{FG_CYAN}║{RESET}                     {BOLD}Restart Tunnel{RESET}                     {BOLD}{FG_CYAN}║{RESET}")
+    print(f"{BOLD}{FG_CYAN}║{RESET}                     {BOLD}Restart Tunnel{RESET}                       {BOLD}{FG_CYAN}║{RESET}")
     print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
     print()
     
@@ -1913,7 +1867,7 @@ def core_management_menu():
     while True:
         clear()
         print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-        print(f"{BOLD}{FG_CYAN}║{RESET}                 {BOLD}Netrix Core Management{RESET}                {BOLD}{FG_CYAN}║{RESET}")
+        print(f"{BOLD}{FG_CYAN}║{RESET}                {BOLD}Netrix Core Management{RESET}                    {BOLD}{FG_CYAN}║{RESET}")
         print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
         print()
         
@@ -2026,23 +1980,19 @@ def install_netrix_core():
             pause()
             return
         
-        # Extract tar.gz
         print(f"\n  {FG_CYAN}Extracting archive...{RESET}")
         try:
             import tarfile
             
-            # ساخت دایرکتوری موقت برای extract
             if temp_dir.exists():
                 shutil.rmtree(temp_dir)
             temp_dir.mkdir(parents=True, exist_ok=True)
             
-            # Extract
             with tarfile.open(temp_file, 'r:gz') as tar:
                 tar.extractall(temp_dir)
             
             c_ok(f"  ✅ Archive extracted")
             
-            # پیدا کردن فایل netrix در دایرکتوری extract شده
             netrix_file = None
             for file in temp_dir.rglob("netrix"):
                 if file.is_file():
@@ -2075,7 +2025,6 @@ def install_netrix_core():
             
             os.chmod(NETRIX_BINARY, 0o755)
             
-            # پاک کردن فایل‌های موقت
             temp_file.unlink()
             shutil.rmtree(temp_dir)
             
@@ -2110,7 +2059,7 @@ def update_netrix_core():
     try:
         clear()
         print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-        print(f"{BOLD}{FG_CYAN}║{RESET}                   {BOLD}Update Netrix Core{RESET}                    {BOLD}{FG_CYAN}║{RESET}")
+        print(f"{BOLD}{FG_CYAN}║{RESET}                   {BOLD}Update Netrix Core{RESET}                     {BOLD}{FG_CYAN}║{RESET}")
         print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
         print()
         
@@ -2194,7 +2143,7 @@ def delete_netrix_core():
     try:
         clear()
         print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-        print(f"{BOLD}{FG_CYAN}║{RESET}                   {BOLD}Delete Netrix Core{RESET}                    {BOLD}{FG_CYAN}║{RESET}")
+        print(f"{BOLD}{FG_CYAN}║{RESET}                   {BOLD}Delete Netrix Core{RESET}                     {BOLD}{FG_CYAN}║{RESET}")
         print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
         print()
         
@@ -2629,4 +2578,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
