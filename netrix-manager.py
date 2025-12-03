@@ -171,9 +171,9 @@ def configure_buffer_pools() -> dict:
     config = {}
     
     print(f"\n  {BOLD}{FG_YELLOW}Buffer Pool Configuration:{RESET}")
-    print(f"  {FG_WHITE}Note: Press Enter or enter 0 to use default value (will be written as 0 in file){RESET}")
+    print(f"  {FG_WHITE}Note: Press Enter or enter 0 to use default value{RESET}")
     print(f"  {FG_WHITE}Default values: buffer_pool=64KB, large_buffer=64KB, udp_frame=32KB, udp_slice=1500{RESET}")
-    print(f"  {FG_WHITE}Core uses optimized buffer sizes for 16K streams performance{RESET}\n")
+    print(f"  {FG_GREEN}✅ These values are now configurable and will be applied by the core{RESET}\n")
     
     buffer_pool_size = ask_int(
         f"  {BOLD}Buffer Pool Size:{RESET} {FG_WHITE}(bytes, default: 65536 = 64KB, 0 = use default){RESET}",
@@ -315,14 +315,15 @@ def get_default_advanced_config(transport: str) -> dict:
 
     if transport in ("kcpmux", "kcp"):
         base_config.update({
-            "udp_read_buffer": 4194304,   
-            "udp_write_buffer": 4194304  
+            "udp_read_buffer": 4194304,    
+            "udp_write_buffer": 4194304   
         })
     elif transport in ("wsmux", "wssmux"):
         base_config.update({
-            "websocket_read_buffer": 524288, 
-            "websocket_write_buffer": 524288,
-            "websocket_compression": False    
+            "websocket_read_buffer": 524288,   
+            "websocket_write_buffer": 524288,   
+            "websocket_compression": False     
+        })
     
     return base_config
 
@@ -612,10 +613,10 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
         "advanced.max_connections": f"Max concurrent connections (default: 2000)",
         "advanced.max_udp_flows": f"Max UDP flows (default: 5000)",
         "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 600 = 10 minutes)",
-        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
-        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
-        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default)",
-        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default)",
+        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default, configurable)",
+        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default, configurable)",
+        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default, configurable)",
+        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default, configurable)",
         "heartbeat": f"Heartbeat interval in seconds (default: 20, 0 = use default)",
         "verbose": f"Verbose logging (default: false)",
     }
@@ -750,10 +751,10 @@ def create_client_config_file(cfg: dict) -> Path:
         "advanced.max_connections": f"Max concurrent connections (default: 2000)",
         "advanced.max_udp_flows": f"Max UDP flows (default: 5000)",
         "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 600 = 10 minutes)",
-        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
-        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
-        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default)",
-        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default)",
+        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default, configurable)",
+        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default, configurable)",
+        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default, configurable)",
+        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default, configurable)",
         "heartbeat": f"Heartbeat interval in seconds (default: 20, 0 = use default)",
         "verbose": f"Verbose logging (default: false)",
     }
