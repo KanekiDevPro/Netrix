@@ -172,8 +172,8 @@ def configure_buffer_pools() -> dict:
     
     print(f"\n  {BOLD}{FG_YELLOW}Buffer Pool Configuration:{RESET}")
     print(f"  {FG_WHITE}Note: Press Enter or enter 0 to use default value (will be written as 0 in file){RESET}")
-    print(f"  {FG_WHITE}Default values: buffer_pool=128KB (fixed), large_buffer=128KB (fixed), udp_frame=64KB+256, udp_slice=1500{RESET}")
-    print(f"  {FG_WHITE}Buffer pool sizes are fixed at 128KB for optimal performance{RESET}\n")
+    print(f"  {FG_WHITE}Default values: buffer_pool=64KB, large_buffer=64KB, udp_frame=32KB, udp_slice=1500{RESET}")
+    print(f"  {FG_WHITE}Core uses optimized buffer sizes for 16K streams performance{RESET}\n")
     
     buffer_pool_size = ask_int(
         f"  {BOLD}Buffer Pool Size:{RESET} {FG_WHITE}(bytes, default: 65536 = 64KB, 0 = use default){RESET}",
@@ -183,20 +183,17 @@ def configure_buffer_pools() -> dict:
     config["buffer_pool_size"] = buffer_pool_size
     
     large_buffer_pool_size = ask_int(
-        f"  {BOLD}Large Buffer Pool Size:{RESET} {FG_WHITE}(bytes, default: 262144 = 256KB, 0 = use default){RESET}",
+        f"  {BOLD}Large Buffer Pool Size:{RESET} {FG_WHITE}(bytes, default: 65536 = 64KB, 0 = use default){RESET}",
         min_=0,
         default=0
     )
     config["large_buffer_pool_size"] = large_buffer_pool_size
     
     udp_frame_pool_size = ask_int(
-        f"  {BOLD}UDP Frame Pool Size:{RESET} {FG_WHITE}(bytes, min: 65856 = 64KB+256, 0 = use default){RESET}",
+        f"  {BOLD}UDP Frame Pool Size:{RESET} {FG_WHITE}(bytes, default: 32768 = 32KB, 0 = use default){RESET}",
         min_=0,
         default=0
     )
-    if udp_frame_pool_size > 0 and udp_frame_pool_size < 65856:
-        c_warn(f"  ⚠️  UDP Frame Pool Size too small ({udp_frame_pool_size}), minimum is 65856 bytes")
-        c_warn(f"  ⚠️  Core will automatically use minimum size")
     config["udp_frame_pool_size"] = udp_frame_pool_size
     
     udp_data_slice_size = ask_int(
@@ -218,66 +215,66 @@ def get_config_path(tport: int) -> Path:
     return ROOT_DIR / f"server{tport}.yaml"
 
 def get_default_smux_config(profile: str = "balanced") -> dict:
-    """تنظیمات پیش‌فرض SMUX بر اساس profile - بهینه شده برای scale بالا"""
+    """تنظیمات پیش‌فرض SMUX بر اساس profile"""
     profiles = {
         "balanced": {
-            "keepalive": 10,
-            "max_recv": 16777216, 
-            "max_stream": 16777216,  
-            "frame_size": 32768,
+            "keepalive": 20,        
+            "max_recv": 4194304,  
+            "max_stream": 2097152,  
+            "frame_size": 32768,  
             "version": 2,
-            "mux_con": 10      
+            "mux_con": 10           
         },
         "aggressive": {
-            "keepalive": 10,  
-            "max_recv": 33554432, 
-            "max_stream": 33554432, 
-            "frame_size": 32768,
-            "version": 2,                 
-            "mux_con": 10                 
+            "keepalive": 20,      
+            "max_recv": 4194304,   
+            "max_stream": 2097152,  
+            "frame_size": 32768,    
+            "version": 2,
+            "mux_con": 10         
         },
         "latency": {
             "keepalive": 3,
-            "max_recv": 4194304, 
-            "max_stream": 4194304, 
-            "frame_size": 32768,
-            "version": 2,                   
-            "mux_con": 10                   
+            "max_recv": 4194304,   
+            "max_stream": 2097152,  
+            "frame_size": 32768,  
+            "version": 2,
+            "mux_con": 10
         },
         "cpu-efficient": {
             "keepalive": 10,
-            "max_recv": 4194304, 
-            "max_stream": 4194304, 
-            "frame_size": 32768,
-            "version": 2,                    
-            "mux_con": 10                     
+            "max_recv": 4194304,   
+            "max_stream": 2097152,  
+            "frame_size": 32768,   
+            "version": 2,
+            "mux_con": 10
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
 
 def get_default_kcp_config(profile: str = "balanced") -> dict:
-    """تنظیمات پیش‌فرض KCP بر اساس profile - بهینه شده برای کاهش CPU"""
+    """تنظیمات پیش‌فرض KCP بر اساس profile - بهینه شده برای 16K streams"""
     profiles = {
         "balanced": {
-            "nodelay": 0, 
-            "interval": 20, 
+            "nodelay": 0,      
+            "interval": 15,     
             "resend": 2,
-            "nc": 0, 
-            "sndwnd": 512,
-            "rcvwnd": 512,
-            "mtu": 1400
+            "nc": 0,            
+            "sndwnd": 1024,   
+            "rcvwnd": 1024,    
+            "mtu": 1350        
         },
         "aggressive": {
-            "nodelay": 0,  
-            "interval": 15,
+            "nodelay": 0,      
+            "interval": 15,   
             "resend": 2,
-            "nc": 0, 
-            "sndwnd": 1024, 
-            "rcvwnd": 1024,
-            "mtu": 1400
+            "nc": 0,           
+            "sndwnd": 1024,   
+            "rcvwnd": 1024,    
+            "mtu": 1350        
         },
         "latency": {
-            "nodelay": 1, 
+            "nodelay": 1,
             "interval": 8,
             "resend": 2,
             "nc": 1,
@@ -290,7 +287,7 @@ def get_default_kcp_config(profile: str = "balanced") -> dict:
             "interval": 40,
             "resend": 2,
             "nc": 0,
-            "sndwnd": 256, 
+            "sndwnd": 256,
             "rcvwnd": 256,
             "mtu": 1400
         }
@@ -298,34 +295,34 @@ def get_default_kcp_config(profile: str = "balanced") -> dict:
     return profiles.get(profile.lower(), profiles["balanced"])
 
 def get_default_advanced_config(transport: str) -> dict:
-    """تنظیمات پیش‌فرض Advanced بر اساس transport - بهینه شده برای scale بالا"""
+    """تنظیمات پیش‌فرض Advanced بر اساس transport - بهینه شده برای 16K streams"""
     base_config = {
         "tcp_nodelay": True,
-        "tcp_keepalive": 15,
-        "tcp_read_buffer": 8388608,
-        "tcp_write_buffer": 8388608,
-        "cleanup_interval": 180,
-        "session_timeout": 21600,
-        "connection_timeout": 600,
-        "stream_timeout": 21600,
-        "max_connections": 2000,
-        "max_udp_flows": 5000,
-        "udp_flow_timeout": 600,
+        "tcp_keepalive": 30,          
+        "tcp_read_buffer": 8388608,   
+        "tcp_write_buffer": 8388608,  
+        "cleanup_interval": 60,       
+        "session_timeout": 120,     
+        "connection_timeout": 600,   
+        "stream_timeout": 21600,      
+        "stream_idle_timeout": 600,   
+        "max_connections": 2000,       
+        "max_udp_flows": 5000,         
+        "udp_flow_timeout": 600,       
         "verbose": False
     }
     
 
     if transport in ("kcpmux", "kcp"):
         base_config.update({
-            "udp_read_buffer": 4194304,  
+            "udp_read_buffer": 4194304,   
             "udp_write_buffer": 4194304  
         })
     elif transport in ("wsmux", "wssmux"):
         base_config.update({
-            "websocket_read_buffer": 262144, 
-            "websocket_write_buffer": 262144, 
-            "websocket_compression": False
-        })
+            "websocket_read_buffer": 524288, 
+            "websocket_write_buffer": 524288,
+            "websocket_compression": False    
     
     return base_config
 
@@ -474,6 +471,48 @@ def get_certificate_with_acme(domain: str, email: str, port: int) -> tuple[Optio
     
     return str(cert_file), str(key_file)
 
+def write_yaml_with_comments(file_path: Path, data: dict, comments: dict = None):
+    """نوشتن YAML با comment های default values"""
+    if comments is None:
+        comments = {}
+    
+    lines = []
+    
+    def write_dict(d: dict, indent: int = 0, parent_key: str = ""):
+        for key, value in d.items():
+            full_key = f"{parent_key}.{key}" if parent_key else key
+            comment = comments.get(full_key, "")
+            
+            if isinstance(value, dict):
+                if comment:
+                    lines.append(f"{'  ' * indent}{key}:  # {comment}")
+                else:
+                    lines.append(f"{'  ' * indent}{key}:")
+                write_dict(value, indent + 1, full_key)
+            elif isinstance(value, list):
+                if comment:
+                    lines.append(f"{'  ' * indent}{key}:  # {comment}")
+                else:
+                    lines.append(f"{'  ' * indent}{key}:")
+                for item in value:
+                    if isinstance(item, dict):
+                        lines.append(f"{'  ' * (indent + 1)}-")
+                        for k, v in item.items():
+                            lines.append(f"{'  ' * (indent + 2)}{k}: {v}")
+                    else:
+                        lines.append(f"{'  ' * (indent + 1)}- {item}")
+            else:
+                if comment:
+                    lines.append(f"{'  ' * indent}{key}: {value}  # {comment}")
+                else:
+                    lines.append(f"{'  ' * indent}{key}: {value}")
+    
+    write_dict(data)
+    
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(lines))
+        f.write('\n')
+
 def create_server_config_file(tport: int, cfg: dict) -> Path:
     """ساخت فایل کانفیگ YAML برای سرور"""
     config_path = get_config_path(tport)
@@ -553,8 +592,47 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
                 "target": m['target']
             })
     
-    with open(config_path, 'w', encoding='utf-8') as f:
-        yaml.dump(yaml_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+    comments = {
+        "profile": f"Performance profile (default: balanced)",
+        "smux.keepalive": f"Keepalive interval in seconds (default: {smux_default['keepalive']})",
+        "smux.max_recv": f"Max receive buffer in bytes (default: {smux_default['max_recv']} = 4MB)",
+        "smux.max_stream": f"Max stream buffer in bytes (default: {smux_default['max_stream']} = 2MB)",
+        "smux.frame_size": f"Frame size in bytes (default: {smux_default['frame_size']} = 32KB)",
+        "smux.version": f"SMUX version (default: {smux_default['version']})",
+        "advanced.tcp_nodelay": f"TCP NoDelay (default: true)",
+        "advanced.tcp_keepalive": f"TCP KeepAlive in seconds (default: 30)",
+        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.cleanup_interval": f"Cleanup interval in seconds (default: 60 = 1 minute)",
+        "advanced.session_timeout": f"Session timeout in seconds (default: 120 = 2 minutes, 6 × heartbeat)",
+        "advanced.connection_timeout": f"Connection timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 21600 = 6 hours)",
+        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.max_connections": f"Max concurrent connections (default: 2000)",
+        "advanced.max_udp_flows": f"Max UDP flows (default: 5000)",
+        "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
+        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
+        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default)",
+        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default)",
+        "heartbeat": f"Heartbeat interval in seconds (default: 20, 0 = use default)",
+        "verbose": f"Verbose logging (default: false)",
+    }
+    
+    if transport == "kcpmux":
+        kcp_default = get_default_kcp_config(profile)
+        comments.update({
+            "kcp.nodelay": f"KCP NoDelay (default: {kcp_default['nodelay']})",
+            "kcp.interval": f"KCP interval in ms (default: {kcp_default['interval']})",
+            "kcp.resend": f"KCP resend (default: {kcp_default['resend']})",
+            "kcp.nc": f"KCP NC (default: {kcp_default['nc']})",
+            "kcp.sndwnd": f"KCP send window (default: {kcp_default['sndwnd']})",
+            "kcp.rcvwnd": f"KCP receive window (default: {kcp_default['rcvwnd']})",
+            "kcp.mtu": f"KCP MTU (default: {kcp_default['mtu']})",
+        })
+    
+    write_yaml_with_comments(config_path, yaml_data, comments)
     
     try:
         os.chmod(config_path, 0o600)
@@ -592,7 +670,7 @@ def create_client_config_file(cfg: dict) -> Path:
             if 'connection_pool' in path:
                 path_data["connection_pool"] = path['connection_pool']
             else:
-                path_data["connection_pool"] = 4
+                path_data["connection_pool"] = 8
             if path.get('retry_interval'):
                 path_data["retry_interval"] = path['retry_interval']
             if path.get('dial_timeout'):
@@ -651,8 +729,48 @@ def create_client_config_file(cfg: dict) -> Path:
         if "udp_data_slice_size" in buffer_config:
             yaml_data["advanced"]["udp_data_slice_size"] = buffer_config["udp_data_slice_size"]
     
-    with open(config_path, 'w', encoding='utf-8') as f:
-        yaml.dump(yaml_data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+
+    comments = {
+        "profile": f"Performance profile (default: balanced)",
+        "smux.keepalive": f"Keepalive interval in seconds (default: {smux_default['keepalive']})",
+        "smux.max_recv": f"Max receive buffer in bytes (default: {smux_default['max_recv']} = 4MB)",
+        "smux.max_stream": f"Max stream buffer in bytes (default: {smux_default['max_stream']} = 2MB)",
+        "smux.frame_size": f"Frame size in bytes (default: {smux_default['frame_size']} = 32KB)",
+        "smux.version": f"SMUX version (default: {smux_default['version']})",
+        "smux.mux_con": f"Number of multiplexed connections (default: {smux_default['mux_con']})",
+        "advanced.tcp_nodelay": f"TCP NoDelay (default: true)",
+        "advanced.tcp_keepalive": f"TCP KeepAlive in seconds (default: 30)",
+        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.cleanup_interval": f"Cleanup interval in seconds (default: 60 = 1 minute)",
+        "advanced.session_timeout": f"Session timeout in seconds (default: 120 = 2 minutes, 6 × heartbeat)",
+        "advanced.connection_timeout": f"Connection timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 21600 = 6 hours)",
+        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.max_connections": f"Max concurrent connections (default: 2000)",
+        "advanced.max_udp_flows": f"Max UDP flows (default: 5000)",
+        "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.buffer_pool_size": f"Buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
+        "advanced.large_buffer_pool_size": f"Large buffer pool size in bytes (default: 65536 = 64KB, 0 = use default)",
+        "advanced.udp_frame_pool_size": f"UDP frame pool size in bytes (default: 32768 = 32KB, 0 = use default)",
+        "advanced.udp_data_slice_size": f"UDP data slice size in bytes (default: 1500 = MTU, 0 = use default)",
+        "heartbeat": f"Heartbeat interval in seconds (default: 20, 0 = use default)",
+        "verbose": f"Verbose logging (default: false)",
+    }
+    
+    if any(p.get('transport') == 'kcpmux' for p in paths):
+        kcp_default = get_default_kcp_config(profile)
+        comments.update({
+            "kcp.nodelay": f"KCP NoDelay (default: {kcp_default['nodelay']})",
+            "kcp.interval": f"KCP interval in ms (default: {kcp_default['interval']})",
+            "kcp.resend": f"KCP resend (default: {kcp_default['resend']})",
+            "kcp.nc": f"KCP NC (default: {kcp_default['nc']})",
+            "kcp.sndwnd": f"KCP send window (default: {kcp_default['sndwnd']})",
+            "kcp.rcvwnd": f"KCP receive window (default: {kcp_default['rcvwnd']})",
+            "kcp.mtu": f"KCP MTU (default: {kcp_default['mtu']})",
+        })
+    
+    write_yaml_with_comments(config_path, yaml_data, comments)
     
     try:
         os.chmod(config_path, 0o600)
@@ -1247,7 +1365,7 @@ def create_server_tunnel():
         print(f"\n  {BOLD}{FG_CYAN}Server Limits:{RESET}")
         max_sessions = ask_int(f"  {BOLD}Max Sessions:{RESET} {FG_WHITE}(0 = unlimited, recommended: 0 or 1000+){RESET}", min_=0, max_=100000, default=0)
         
-        heartbeat = ask_int(f"  {BOLD}Heartbeat Interval:{RESET} {FG_WHITE}(seconds, 0 = use default 10s){RESET}", min_=0, max_=300, default=0)
+        heartbeat = ask_int(f"  {BOLD}Heartbeat Interval:{RESET} {FG_WHITE}(seconds, 0 = use default 20s){RESET}", min_=0, max_=300, default=0)
         
         print(f"\n  {BOLD}{FG_CYAN}Performance Tuning:{RESET} {FG_YELLOW}(Advanced - Optional){RESET}")
         if ask_yesno(f"  {BOLD}Configure Buffer Pool sizes?{RESET} {FG_WHITE}(for performance tuning){RESET}", default=False):
@@ -1345,7 +1463,7 @@ def create_client_tunnel():
         paths = []
         
         print(f"\n  {BOLD}{FG_CYAN}Connection Settings:{RESET}")
-        connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 4-8){RESET}", min_=1, max_=100, default=4)
+        connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-24){RESET}", min_=1, max_=100, default=8)
         mux_con = ask_int(f"  {BOLD}Mux Con:{RESET} {FG_WHITE}(recommended: 10){RESET}", min_=1, max_=100, default=10)
         retry_interval = ask_int(f"  {BOLD}Retry Interval:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=3)
         dial_timeout = ask_int(f"  {BOLD}Dial Timeout:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=10)
@@ -1386,7 +1504,7 @@ def create_client_tunnel():
             new_transport_choice = ask_int(f"\n  {BOLD}Select transport:{RESET}", min_=1, max_=4, default=1)
             new_transport = transports[new_transport_choice]
             
-            new_connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 4-8){RESET}", min_=1, max_=100, default=4)
+            new_connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-24){RESET}", min_=1, max_=100, default=8)
             
             new_retry_interval = ask_int(f"  {BOLD}Retry Interval:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=3)
             new_dial_timeout = ask_int(f"  {BOLD}Dial Timeout:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=10)
@@ -1411,7 +1529,7 @@ def create_client_tunnel():
         verbose = ask_yesno(f"  {BOLD}Enable verbose logging (for debugging)?{RESET}", default=False)
         
 
-        heartbeat = ask_int(f"  {BOLD}Heartbeat Interval:{RESET} {FG_WHITE}(seconds, 0 = use default 10s){RESET}", min_=0, max_=300, default=0)
+        heartbeat = ask_int(f"  {BOLD}Heartbeat Interval:{RESET} {FG_WHITE}(seconds, 0 = use default 20s){RESET}", min_=0, max_=300, default=0)
         
         print(f"\n  {BOLD}{FG_CYAN}Performance Tuning:{RESET} {FG_YELLOW}(Advanced - Optional){RESET}")
         if ask_yesno(f"  {BOLD}Configure Buffer Pool sizes?{RESET} {FG_WHITE}(for performance tuning){RESET}", default=False):
