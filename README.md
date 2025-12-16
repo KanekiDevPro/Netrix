@@ -123,15 +123,6 @@ After installation, just run:
 netrix-manager
 ```
 
-### Alternative Installation
-
-```bash
-# Download and run the management script
-wget -O netrixcore.py https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py
-chmod +x netrixcore.py
-python3 netrixcore.py
-```
-
 ### Manual Installation
 
 ```bash
@@ -789,15 +780,6 @@ wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.p
 netrix-manager
 ```
 
-### نصب جایگزین
-
-```bash
-# دانلود و اجرای اسکریپت مدیریت
-wget -O netrixcore.py https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py
-chmod +x netrixcore.py
-python3 netrixcore.py
-```
-
 ### نصب دستی
 
 ```bash
@@ -806,7 +788,9 @@ python3 netrixcore.py
 wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-amd64.tar.gz
 tar -xzf netrix-amd64.tar.gz
 mv netrix /usr/local/bin/
+```
 
+```bash
 # ARM64
 wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-arm64.tar.gz
 tar -xzf netrix-arm64.tar.gz
