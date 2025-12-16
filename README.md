@@ -1,24 +1,16 @@
 # Netrix - Advanced Reverse Tunneling Solution
-# نتریکس – راهکار پیشرفتهٔ تونل‌سازی معکوس (Reverse Tunneling)
 
 [![Go Version](https://img.shields.io/badge/Go-1.20+-00ADD8?style=flat&logo=go)](https://golang.org/)
-
+[![License](https://img.shields.io/badge/License-Commercial-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/badge/Release-Stable-green.svg)](https://github.com/yourusername/netrix/releases)
 
 ---
 
 ## 🌐 Language | زبان
 
-**فارسی** | [فارسی (Persian)](#about-netrix-reverse-tunneling-فارسی)
-
-<div dir="rtl">
-
-**English** | [English (انگلیسی)](#about-netrix-reverse-tunneling)
-
-</div>
+**English** | [فارسی (Persian)](#درباره-تونل-معکوس-netrix)
 
 ---
-
-<a id="about-netrix-reverse-tunneling"></a>
 
 ## About Netrix Reverse Tunneling
 
@@ -33,739 +25,647 @@ Reverse tunneling is a network technique that allows you to connect from a restr
 2. Server accesses local services through this connection
 3. Users connect to local services through the server
 
-**Benefits:**
-- ✅ NAT traversal without port forwarding
-- ✅ Firewall bypass through TCP/WebSocket
-- ✅ Security with PSK authentication and TLS encryption
-- ✅ High performance for massive connections
-- ✅ Multiplexing: multiple connections over one tunnel
-- ✅ Full UDP support with frame protocol
+### Key Features
 
-**Use Cases:**
-- 🎮 Gaming: Connect to game servers behind NAT
-- 🖥️ Remote Access: Remote access to local services
-- 📡 Service Exposure: Expose local services to internet
-- 🔒 Bypass Restrictions: Bypass network restrictions
-- 🌐 VPN Alternative: Alternative to traditional VPN
+- ✅ **NAT Traversal** - No port forwarding required
+- ✅ **Multiple Transports** - TCP, KCP, WebSocket, Secure WebSocket
+- ✅ **Stream Multiplexing** - Multiple connections over single tunnel (SMUX)
+- ✅ **Full UDP Support** - Frame protocol for UDP traversal
+- ✅ **ChaCha20-Poly1305 Encryption** - Anti-DPI with AEAD encryption
+- ✅ **Stealth Mode** - Random padding and timing jitter
+- ✅ **TUN Mode** - Layer 3 VPN for L2TP/IPsec, WireGuard
+- ✅ **IPv6 Support** - Full IPv4 and IPv6 compatibility
+- ✅ **Multi-Path** - Multiple server paths with automatic failover
+- ✅ **Health Check API** - Built-in monitoring endpoints
+- ✅ **Performance Profiles** - Pre-configured optimization profiles
+- ✅ **License Management** - Built-in license validation
 
-### Netrix Architecture
+### Use Cases
+
+- 🎮 **Gaming** - Connect to game servers behind NAT
+- 🖥️ **Remote Access** - Access local services remotely
+- 📡 **Service Exposure** - Expose local services to internet
+- 🔒 **Bypass Restrictions** - Bypass network restrictions
+- 🌐 **VPN Alternative** - Alternative to traditional VPN
+
+---
+
+## Architecture
 
 Netrix uses a multi-layer architecture:
 
-**1. Transport Layer (TCP, KCP, WebSocket, WSS)**
-- Base connection between client and server
-- TCP: Reliable and stable
-- KCP: Fast and low latency for gaming
-- WebSocket: Bypass HTTP-aware firewalls
-- WSS: Secure with TLS/SSL
+### 1. Transport Layer (TCP, KCP, WebSocket, WSS)
+- **TCP (tcpmux)** - Reliable and stable
+- **KCP (kcpmux)** - Fast, low latency for gaming
+- **WebSocket (wsmux)** - Bypass HTTP-aware firewalls
+- **WSS (wssmux)** - Secure with TLS/SSL
 
-**2. SMUX Layer (Stream Multiplexing)**
+### 2. SMUX Layer (Stream Multiplexing)
 - Multiple streams over one transport connection
 - Reduced overhead and optimal usage
 - Concurrent connection capability
+- Configurable mux_con for nested multiplexing
 
-**3. Session Manager Layer**
+### 3. Session Manager Layer
 - Session pool management
-- Intelligent load balancing (least-loaded)
+- Health-aware load balancing (least-loaded)
 - Precise stream tracking
+- Automatic slow session detection
 
-**4. Frame Protocol for UDP**
+### 4. Frame Protocol for UDP
 - Encapsulate UDP packets in frames
 - UDP traversal through tunnel
 - Multiple UDP flow management
 
----
+### 5. Encryption Layer (Optional)
+- ChaCha20-Poly1305 AEAD encryption
+- Per-direction nonce counters
+- Random padding (anti-DPI)
+- Timing jitter (anti-DPI)
 
-## 🚀 Quick Start with Management Script
-
-For easier tunnel management, we provide a Python management script that handles configuration, installation, and system optimization automatically.
-
-### 🔐 License Purchase
-
-**Important:** To use Netrix, you need to purchase a license first.
-
-**Purchase License:**
-- 🤖 **Telegram Bot**: [@mnxcore_bot](https://t.me/mnxcore_bot)
-- 👤 **Developer Contact**: [@g0dline](https://t.me/g0dline)
-
-After purchasing the license, you will receive a license key that you need to activate before using Netrix.
-
-### Installation
-
-```bash
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc
-```
-
-### Features
-- ✅ **Interactive Menu**: Easy-to-use interface for tunnel management
-- ✅ **Auto Configuration**: Automatically generates YAML config files
-- ✅ **Core Management**: Install/Update/Delete Netrix core binary
-- ✅ **Systemd Integration**: Auto-start tunnels on boot with systemd
-- ✅ **System Optimizer**: Optimize Linux kernel parameters for high performance
-- ✅ **Multi-Transport**: Support for TCP, KCP, WebSocket, and WSS
-- ✅ **Certificate Management**: Automatic Let's Encrypt certificate acquisition
-- ✅ **Profile Selection**: Choose from 4 performance profiles
-- ✅ **Port Mapping**: Easy TCP/UDP port mapping with ranges support
-- 🔐 **License Management**: Built-in license activation and validation
-
-### Usage
-
-Run the script and follow the interactive menu:
-
-```bash
-netrix-manager
-```
-
-**Main Menu Options:**
-1. **Create Tunnel** - Create Server or Client tunnel with interactive prompts
-2. **Status** - View all tunnels and their status (running/stopped)
-3. **Stop** - Stop running tunnels
-4. **Restart** - Restart tunnels
-5. **Delete** - Remove tunnels and their configuration files
-6. **Netrix Core Management** - Install/Update/Delete Netrix core binary
-7. **System Optimizer** - Optimize Linux kernel parameters for high traffic
-
-### 📞 Support & Contact
-
-**Purchase License:**
-- 🤖 **Telegram Bot**: [@mnxcore_bot](https://t.me/mnxcore_bot)
-
-**Developer:**
-- 👤 **Telegram**: [@g0dline](https://t.me/g0dline)
-
-
----
-
-## Manual Configuration
-
-If you prefer manual configuration, you can create YAML files and run Netrix directly.
-
-## Server Configuration
-
-### Server Flags
-
-```bash
-netrix server [OPTIONS]
-```
-
-**Basic Options:**
-- `-listen string` - Listen address (default: `:4000`)
-- `-transport string` - Transport: `tcpmux|kcpmux|wsmux|wssmux` (default: `tcpmux`)
-- `-map string` - Port mappings: `"tcp::bind->target,udp::bind->target"`
-- `-psk string` - Pre-shared key (required)
-- `-profile string` - Profile: `balanced|aggressive|latency|cpu-efficient` (default: `balanced`)
-- `-verbose` - Enable verbose logging
-- `-cert string` - TLS certificate file path (for wssmux)
-- `-key string` - TLS private key file path (for wssmux)
-
-**SMUX Options:**
-- `-smux-keepalive int` - SMUX keepalive interval (seconds, overrides profile)
-- `-smux-max-recv int` - SMUX max receive buffer (bytes, overrides profile)
-- `-smux-max-stream int` - SMUX max stream buffer (bytes, overrides profile)
-- `-smux-frame-size int` - SMUX frame size (bytes, default: 32768, overrides profile)
-
-**KCP Options:**
-- `-kcp-nodelay int` - Enable KCP nodelay (0=disable, 1=enable, overrides profile)
-- `-kcp-interval int` - KCP update interval (milliseconds, overrides profile)
-- `-kcp-resend int` - KCP fast resend threshold (overrides profile)
-- `-kcp-nc int` - Disable KCP congestion control (0=disable, 1=enable, overrides profile)
-- `-kcp-sndwnd int` - KCP send window size (overrides profile)
-- `-kcp-rcvwnd int` - KCP receive window size (overrides profile)
-- `-kcp-mtu int` - KCP Maximum Transmission Unit (overrides profile)
-
----
-
-## Client Configuration
-
-### Client Flags
-
-```bash
-netrix client [OPTIONS]
-```
-
-**Basic Options:**
-- `-server string` - Server address `host:port` (legacy single-path mode)
-- `-transport string` - Transport: `tcpmux|kcpmux|wsmux|wssmux` (default: `tcpmux`)
-- `-parallel int` - Number of parallel tunnels (legacy, default: 1)
-- `-paths string` - Multi-path: `"tcpmux:addr:parallel,kcpmux:addr:parallel,..."`
-- `-psk string` - Pre-shared key (must match server)
-- `-profile string` - Profile: `balanced|aggressive|latency|cpu-efficient` (default: `balanced`)
-- `-verbose` - Enable verbose logging
-
-**Connection Pool Options:**
-- `-connection-pool int` - Number of simultaneous tunnels (alias of parallel, default: 0)
-- `-aggressive-pool` - Aggressively re-dial tunnels to minimize downtime
-- `-retry-interval duration` - Retry interval for dial errors (default: 3s)
-- `-dial-timeout duration` - Dial timeout for tunnel transports (default: 10s)
-
-**SMUX Options:** (same as server)
-- `-smux-keepalive int`
-- `-smux-max-recv int`
-- `-smux-max-stream int`
-- `-smux-frame-size int`
-
-**KCP Options:** (same as server)
-- `-kcp-nodelay int`
-- `-kcp-interval int`
-- `-kcp-resend int`
-- `-kcp-nc int`
-- `-kcp-sndwnd int`
-- `-kcp-rcvwnd int`
-- `-kcp-mtu int`
+### 6. TUN Mode (Layer 3 VPN)
+- Virtual network interface
+- Full IP packet forwarding
+- Route configuration
+- Support for L2TP/IPsec, WireGuard
 
 ---
 
 ## Performance Profiles
 
-Netrix provides 4 pre-configured performance profiles optimized for different use cases:
+Netrix provides 4 pre-configured performance profiles:
 
 | Profile | Use Case | SMUX Keepalive | SMUX Buffer | KCP Interval | KCP Windows | Best For |
 |---------|----------|----------------|-------------|--------------|-------------|----------|
-| **balanced** (default) | General purpose | 8s | 8MB | 10ms | 768/768 | Most users, balanced performance |
-| **aggressive** | High throughput | 5s | 16MB | 8ms | 1024/1024 | Maximum speed, more CPU usage |
-| **latency** | Low latency | 3s | 4MB | 8ms | 768/768 | Gaming, real-time apps |
-| **cpu-efficient** | Low CPU usage | 10s | 8MB | 20ms | 512/512 | Resource-constrained servers |
+| **balanced** (default) | General purpose | 20s | 4MB | 20ms | 512/512 | Most users |
+| **aggressive** | High throughput | 30s | 8MB | 10ms | 2048/2048 | Maximum speed |
+| **latency** | Low latency | 5s | 2MB | 5ms | 256/256 | Gaming, real-time |
+| **cpu-efficient** | Low CPU usage | 60s | 2MB | 50ms | 128/128 | Resource-constrained |
 
-**Profile Details:**
+### Profile Details
 
-- **balanced**: Best overall performance for most users. Good balance between latency, throughput, and CPU usage.
-- **aggressive**: Maximum throughput and speed. Uses more CPU and memory. Best for high-bandwidth applications.
-- **latency**: Optimized for low latency. Best for gaming, video calls, and real-time applications (like Instagram).
-- **cpu-efficient**: Minimizes CPU usage. Best for servers with limited resources or when running many instances.
+- **balanced**: Best overall performance. Good balance between latency, throughput, and CPU usage.
+- **aggressive**: Maximum throughput. Uses more CPU and memory. Best for high-bandwidth applications.
+- **latency**: Optimized for low latency. Best for gaming, video calls, and real-time applications.
+- **cpu-efficient**: Minimizes CPU usage. Best for servers with limited resources.
 
 ---
 
-## Complete Examples for Each Transport
+## Installation
+
+### Using netrixcore.py (Recommended)
+
+```bash
+# Download and run the management script
+wget -O netrixcore.py https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py
+chmod +x netrixcore.py
+python3 netrixcore.py
+```
+
+### Manual Installation
+
+```bash
+# Download binary for your architecture
+# AMD64
+wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-amd64.tar.gz
+tar -xzf netrix-amd64.tar.gz
+mv netrix /usr/local/bin/
+
+# ARM64
+wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-arm64.tar.gz
+tar -xzf netrix-arm64.tar.gz
+mv netrix /usr/local/bin/
+```
+
+---
+
+## Configuration
+
+### Server Configuration (Iran)
+
+```yaml
+mode: "server"
+listen: "0.0.0.0:4000"           # Use [::]:4000 for IPv6
+transport: "tcpmux"              # tcpmux|kcpmux|wsmux|wssmux
+psk: "your_secret_key_here"
+profile: "balanced"              # balanced|aggressive|latency|cpu-efficient
+
+# Port mappings (simplified format)
+tcp_ports: [2066, 9988, 6665]    # TCP ports to forward
+udp_ports: [2066, 9988]          # UDP ports to forward
+
+# SMUX settings
+smux:
+  keepalive: 20                  # seconds (default: 20)
+  max_recv: 4194304              # 4MB (default)
+  max_stream: 2097152            # 2MB (default)
+  frame_size: 32768              # 32KB (default)
+  version: 2                     # SMUX version
+  mux_con: 8                     # multiplexed connections
+
+# KCP settings (only for kcpmux)
+kcp:
+  nodelay: 0                     # 0=batching, 1=no batching
+  interval: 20                   # ms (update interval)
+  resend: 2                      # fast resend threshold
+  nc: 0                          # 0=congestion control, 1=no CC
+  sndwnd: 512                    # send window
+  rcvwnd: 512                    # receive window
+  mtu: 1350                      # MTU
+
+# Advanced settings
+advanced:
+  tcp_nodelay: true
+  tcp_keepalive: 30              # seconds
+  tcp_read_buffer: 8388608       # 8MB
+  tcp_write_buffer: 8388608      # 8MB
+  cleanup_interval: 60           # seconds
+  session_timeout: 120           # seconds
+  connection_timeout: 600        # seconds
+  stream_timeout: 21600          # 6 hours
+  stream_idle_timeout: 600       # 10 minutes
+  max_connections: 0             # 0 = unlimited (1M limit)
+  max_udp_flows: 5000
+  udp_flow_timeout: 600          # seconds
+
+# Encryption (ChaCha20-Poly1305)
+encryption:
+  enabled: false                 # enable encryption
+  key: ""                        # empty = use PSK
+
+# Stealth (anti-DPI)
+stealth:
+  padding_enabled: false
+  padding_min: 0
+  padding_max: 128
+  jitter_enabled: false
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+
+# TUN Mode (Layer 3 VPN)
+tun:
+  enabled: false
+  name: "netrix0"
+  local: "10.200.0.1/30"
+  mtu: 1400
+  routes: []
+
+# Health check
+health_port: 19080               # default: 19080
+heartbeat: 20                    # seconds (default: 20)
+verbose: false
+```
+
+### Client Configuration (Kharej)
+
+```yaml
+mode: "client"
+psk: "your_secret_key_here"
+profile: "balanced"
+
+# Multi-path support (multiple servers)
+paths:
+  - transport: "tcpmux"
+    addr: "SERVER_IP:4000"       # IPv6: [2001:db8::1]:4000
+    connection_pool: 24          # recommended: 8-24
+    aggressive_pool: false
+    retry_interval: 3            # seconds
+    dial_timeout: 10             # seconds
+  # Backup server (optional)
+  - transport: "tcpmux"
+    addr: "BACKUP_IP:4000"
+    connection_pool: 8
+    retry_interval: 5
+    dial_timeout: 10
+
+# SMUX settings
+smux:
+  keepalive: 20
+  max_recv: 4194304
+  max_stream: 2097152
+  frame_size: 32768
+  version: 2
+  mux_con: 10                    # recommended: 8-16
+
+# KCP settings (if using kcpmux)
+kcp:
+  nodelay: 0
+  interval: 20
+  resend: 2
+  nc: 0
+  sndwnd: 512
+  rcvwnd: 512
+  mtu: 1350
+
+# Advanced settings
+advanced:
+  tcp_nodelay: true
+  tcp_keepalive: 30
+  tcp_read_buffer: 8388608
+  tcp_write_buffer: 8388608
+  cleanup_interval: 60
+  session_timeout: 120
+  connection_timeout: 600
+  stream_timeout: 21600
+  stream_idle_timeout: 600
+  max_connections: 0
+  max_udp_flows: 5000
+  udp_flow_timeout: 600
+
+# Encryption (must match server)
+encryption:
+  enabled: false
+  key: ""
+
+# Stealth (must match server)
+stealth:
+  padding_enabled: false
+  padding_min: 0
+  padding_max: 128
+  jitter_enabled: false
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+
+# TUN Mode (must match server)
+tun:
+  enabled: false
+  name: "netrix0"
+  local: "10.200.0.2/30"         # Different from server!
+  mtu: 1400
+  routes: ["0.0.0.0/0"]          # Route all traffic
+
+heartbeat: 20
+verbose: false
+```
+
+---
+
+## Running Netrix
+
+### Using Config File
+
+```bash
+# Server
+netrix -config /root/server4000.yaml
+
+# Client
+netrix -config /root/client_SERVER_IP_4000.yaml
+```
+
+### Using Systemd (Recommended)
+
+The `netrixcore.py` script automatically creates systemd services:
+
+```bash
+# Check status
+systemctl status netrix-server4000
+
+# Start/Stop/Restart
+systemctl start netrix-server4000
+systemctl stop netrix-server4000
+systemctl restart netrix-server4000
+
+# View logs
+journalctl -u netrix-server4000 -f
+```
+
+---
+
+## Health Check API
+
+Netrix provides built-in health check endpoints on port 19080:
+
+### Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/health` | Simple liveness check |
+| `/health/ready` | Readiness check (sessions active) |
+| `/health/detailed` | Detailed stats (JSON) |
+
+### Example Response (/health/detailed)
+
+```json
+{
+  "status": "healthy",
+  "sessions": 4,
+  "streams": 128,
+  "rtt_ms": 45,
+  "tcp_in": {"bytes": 1073741824, "formatted": "1.00 GB"},
+  "tcp_out": {"bytes": 536870912, "formatted": "512.00 MB"},
+  "udp_in": {"bytes": 104857600, "formatted": "100.00 MB"},
+  "udp_out": {"bytes": 52428800, "formatted": "50.00 MB"},
+  "total_traffic": {"bytes": 1768000000, "formatted": "1.65 GB"}
+}
+```
+
+---
+
+## Transport Examples
 
 ### TCP Multiplexing (tcpmux)
 
-**Server file: server-tcp.yaml**
+Best for: General purpose, reliable connections
 
+**Server:**
 ```yaml
 mode: "server"
 listen: "0.0.0.0:4000"
 transport: "tcpmux"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-advanced:
-  # TCP Settings
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
-
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
+psk: "your_secret_key"
+profile: "balanced"
+tcp_ports: [2066]
+udp_ports: [2066]
 ```
 
-**Run server:**
-
-```bash
-netrix -config server-tcp.yaml
-```
-
-**Client file: client-tcp.yaml**
-
+**Client:**
 ```yaml
 mode: "client"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
+psk: "your_secret_key"
+profile: "balanced"
 paths:
   - transport: "tcpmux"
     addr: "SERVER_IP:4000"
-    connection_pool: 4        # number of simultaneous tunnels
-    aggressive_pool: false    # aggressively re-dial on failure
-    retry_interval: 3         # seconds
-    dial_timeout: 10          # seconds
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-advanced:
-  # TCP Settings
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
+    connection_pool: 16
 ```
-
-**Run client:**
-
-```bash
-netrix -config client-tcp.yaml
-```
-
----
 
 ### KCP Multiplexing (kcpmux)
 
-**Server file: server-kcp.yaml**
+Best for: Gaming, low latency applications
 
+**Server:**
 ```yaml
 mode: "server"
 listen: "0.0.0.0:4001"
 transport: "kcpmux"
-psk: "your_secret_key_here"
+psk: "your_secret_key"
 profile: "latency"
-
-smux:
-  keepalive: 3
-  max_recv: 4194304
-  max_stream: 4194304
-  frame_size: 32768
-
+tcp_ports: [2066]
+udp_ports: [2066]
 kcp:
-  nodelay: 1          # 0=disable, 1=enable
-  interval: 8         # milliseconds (update interval)
-  resend: 2           # fast resend threshold
-  nc: 1               # disable congestion control (0=disable, 1=enable)
-  sndwnd: 768         # send window size
-  rcvwnd: 768         # receive window size
-  mtu: 1350           # Maximum Transmission Unit (bytes)
-
-advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # UDP Settings (for tunnel connection)
-  udp_read_buffer: 4194304   # 4MB (bytes)
-  udp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
-
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:22"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
+  nodelay: 1
+  interval: 5
+  resend: 1
+  nc: 1
+  sndwnd: 256
+  rcvwnd: 256
+  mtu: 1200
 ```
 
-**Run server:**
-
-```bash
-netrix -config server-kcp.yaml
-```
-
-**Client file: client-kcp.yaml**
-
+**Client:**
 ```yaml
 mode: "client"
-psk: "your_secret_key_here"
-profile: "latency"  # balanced|aggressive|latency|cpu-efficient
-
+psk: "your_secret_key"
+profile: "latency"
 paths:
   - transport: "kcpmux"
     addr: "SERVER_IP:4001"
-    connection_pool: 4        # number of simultaneous tunnels
-    aggressive_pool: true     # aggressively re-dial on failure
-    retry_interval: 1         # seconds
-    dial_timeout: 5           # seconds
-
-smux:
-  keepalive: 3          # seconds
-  max_recv: 4194304     # 4MB (bytes)
-  max_stream: 4194304   # 4MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-kcp:
-  nodelay: 1          # 0=disable, 1=enable
-  interval: 8         # milliseconds (update interval)
-  resend: 2           # fast resend threshold
-  nc: 1               # disable congestion control (0=disable, 1=enable)
-  sndwnd: 768         # send window size
-  rcvwnd: 768         # receive window size
-  mtu: 1350           # Maximum Transmission Unit (bytes)
-
-advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # UDP Settings (for tunnel connection)
-  udp_read_buffer: 4194304   # 4MB (bytes)
-  udp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
+    connection_pool: 8
+    aggressive_pool: true
 ```
-
-**Run client:**
-
-```bash
-netrix -config client-kcp.yaml
-```
-
----
 
 ### WebSocket Multiplexing (wsmux)
 
-**Server file: server-ws.yaml**
+Best for: Bypassing HTTP-aware firewalls
 
+**Server:**
 ```yaml
 mode: "server"
 listen: "0.0.0.0:8080"
 transport: "wsmux"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
+psk: "your_secret_key"
+profile: "balanced"
+tcp_ports: [2066]
+udp_ports: [2066]
 advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # WebSocket Settings (for tunnel connection)
-  websocket_read_buffer: 262144   # 256KB (bytes)
-  websocket_write_buffer: 262144  # 256KB (bytes)
-  websocket_compression: false    # enable/disable compression
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
-
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
+  websocket_read_buffer: 524288
+  websocket_write_buffer: 524288
+  websocket_compression: false
 ```
 
-**Run server:**
-
-```bash
-netrix -config server-ws.yaml
-```
-
-**Client file: client-ws.yaml**
-
+**Client:**
 ```yaml
 mode: "client"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
+psk: "your_secret_key"
+profile: "balanced"
 paths:
   - transport: "wsmux"
     addr: "SERVER_IP:8080"
-    connection_pool: 8        # number of simultaneous tunnels
-    aggressive_pool: false    # aggressively re-dial on failure
-    retry_interval: 3         # seconds
-    dial_timeout: 10          # seconds
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # WebSocket Settings (for tunnel connection)
-  websocket_read_buffer: 262144   # 256KB (bytes)
-  websocket_write_buffer: 262144  # 256KB (bytes)
-  websocket_compression: false    # enable/disable compression
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
+    connection_pool: 16
 ```
 
-**Run client:**
+### Secure WebSocket (wssmux)
 
-```bash
-netrix -config client-ws.yaml
-```
-
----
-
-### Secure WebSocket Multiplexing (wssmux)
+Best for: Encrypted connections through firewalls
 
 **Generate TLS Certificate:**
-
 ```bash
+# Self-signed (testing)
 openssl genpkey -algorithm RSA -out server.key -pkeyopt rsa_keygen_bits:2048
 openssl req -new -key server.key -out server.csr
 openssl x509 -req -in server.csr -signkey server.key -out server.crt -days 365
+
+# Let's Encrypt (production) - use netrixcore.py
 ```
 
-**Server file: server-wss.yaml**
-
+**Server:**
 ```yaml
 mode: "server"
 listen: "0.0.0.0:8443"
 transport: "wssmux"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
-# TLS Certificate Files (required for wssmux)
-cert_file: "/path/to/server.crt"  # TLS certificate file path
-key_file: "/path/to/server.key"   # TLS private key file path
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # WebSocket Settings (for tunnel connection)
-  websocket_read_buffer: 262144   # 256KB (bytes)
-  websocket_write_buffer: 262144  # 256KB (bytes)
-  websocket_compression: false    # enable/disable compression
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-max_sessions: 0      # 0 = unlimited, recommended: 0 or 1000+
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
-
-maps:
-  - type: "tcp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
-  - type: "udp"
-    bind: "0.0.0.0:2066"
-    target: "127.0.0.1:2066"
+psk: "your_secret_key"
+profile: "balanced"
+cert_file: "/root/cert.crt"
+key_file: "/root/private.key"
+tcp_ports: [2066]
+udp_ports: [2066]
 ```
 
-**Run server:**
-
-```bash
-netrix -config server-wss.yaml
-```
-
-**Client file: client-wss.yaml**
-
+**Client:**
 ```yaml
 mode: "client"
-psk: "your_secret_key_here"
-profile: "balanced"  # balanced|aggressive|latency|cpu-efficient
-
+psk: "your_secret_key"
+profile: "balanced"
 paths:
   - transport: "wssmux"
     addr: "SERVER_IP:8443"
-    connection_pool: 8        # number of simultaneous tunnels
-    aggressive_pool: false    # aggressively re-dial on failure
-    retry_interval: 3         # seconds
-    dial_timeout: 10          # seconds
-
-smux:
-  keepalive: 8          # seconds
-  max_recv: 8388608     # 8MB (bytes)
-  max_stream: 8388608   # 8MB (bytes)
-  frame_size: 32768     # 32KB (bytes)
-
-advanced:
-  # TCP Settings (for local connections)
-  tcp_nodelay: true
-  tcp_keepalive: 15     # seconds
-  tcp_read_buffer: 4194304   # 4MB (bytes)
-  tcp_write_buffer: 4194304  # 4MB (bytes)
-  
-  # WebSocket Settings (for tunnel connection)
-  websocket_read_buffer: 262144   # 256KB (bytes)
-  websocket_write_buffer: 262144  # 256KB (bytes)
-  websocket_compression: false    # enable/disable compression
-  
-  # Connection Management
-  cleanup_interval: 3      # seconds
-  session_timeout: 30      # seconds
-  connection_timeout: 60   # seconds
-  stream_timeout: 120      # seconds
-  max_connections: 2000    # maximum concurrent connections
-  
-  # UDP Flow Management
-  max_udp_flows: 1000      # maximum concurrent UDP flows
-  udp_flow_timeout: 300    # seconds (5 minutes)
-  
-  # Buffer Pool Sizes (optional - 0 = use default)
-  buffer_pool_size: 0           # default: 131072 (128KB)
-  large_buffer_pool_size: 0     # default: 131072 (128KB)
-  udp_frame_pool_size: 0        # default: 65856 (64KB+256)
-  udp_data_slice_size: 0        # default: 1500 (MTU)
-
-heartbeat: 10        # seconds (default: 10)
-verbose: false       # enable verbose logging
-```
-
-**Run client:**
-
-```bash
-netrix -config client-wss.yaml
+    connection_pool: 16
 ```
 
 ---
 
-<div dir="rtl">
+## Advanced Features
 
-<a id="about-netrix-reverse-tunneling-فارسی"></a>
+### Encryption (Anti-DPI)
+
+Enable ChaCha20-Poly1305 encryption for traffic obfuscation:
+
+```yaml
+encryption:
+  enabled: true
+  key: ""  # Empty = use PSK as key
+
+stealth:
+  padding_enabled: true    # Random padding
+  padding_min: 0
+  padding_max: 32
+  jitter_enabled: false    # Timing jitter (adds latency)
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+```
+
+### TUN Mode (Layer 3 VPN)
+
+Enable TUN mode for full VPN functionality:
+
+**Server:**
+```yaml
+tun:
+  enabled: true
+  name: "netrix0"
+  local: "10.200.0.1/30"
+  mtu: 1400
+  routes: []
+```
+
+**Client:**
+```yaml
+tun:
+  enabled: true
+  name: "netrix0"
+  local: "10.200.0.2/30"
+  mtu: 1400
+  routes: ["0.0.0.0/0"]  # Route all traffic
+```
+
+### Multi-Path (Failover)
+
+Configure multiple servers for redundancy:
+
+```yaml
+paths:
+  - transport: "tcpmux"
+    addr: "PRIMARY_IP:4000"
+    connection_pool: 16
+  - transport: "tcpmux"
+    addr: "BACKUP_IP:4000"
+    connection_pool: 8
+  - transport: "kcpmux"
+    addr: "BACKUP2_IP:4001"
+    connection_pool: 4
+```
+
+### IPv6 Support
+
+**Server (listen on all interfaces):**
+```yaml
+listen: "[::]:4000"  # IPv4 and IPv6
+```
+
+**Client (connect to IPv6 server):**
+```yaml
+paths:
+  - addr: "[2001:db8::1]:4000"
+```
+
+---
+
+## Buffer Pool Configuration
+
+Fine-tune memory usage for high-performance scenarios:
+
+```yaml
+advanced:
+  buffer_pool_size: 65536        # 64KB (default)
+  large_buffer_pool_size: 65536  # 64KB (default)
+  udp_frame_pool_size: 32768     # 32KB (default)
+  udp_data_slice_size: 1500      # MTU (default)
+```
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Connection refused**
+   - Check if server is running: `systemctl status netrix-server*`
+   - Check firewall: `ufw status` or `iptables -L`
+   - Verify port is open: `netstat -tlnp | grep 4000`
+
+2. **High latency**
+   - Use `latency` profile
+   - Switch to KCP transport
+   - Reduce `connection_pool` size
+
+3. **Connection drops**
+   - Increase `session_timeout` and `stream_timeout`
+   - Enable `aggressive_pool` on client
+   - Check network stability
+
+4. **License errors**
+   - Verify license server is reachable
+   - Check IP registration
+
+### Debug Mode
+
+Enable verbose logging:
+
+```yaml
+verbose: true
+```
+
+Or via command line:
+```bash
+netrix -config config.yaml -verbose
+```
+
+### Health Check
+
+```bash
+# Simple check
+curl http://localhost:19080/health
+
+# Detailed stats
+curl http://localhost:19080/health/detailed | jq
+```
+
+---
+
+## netrixcore.py Management Script
+
+The Python management script provides an interactive menu:
+
+```
+╔══════════════════════════════════════════════════════════╗
+║                    Netrix Management                      ║
+╚══════════════════════════════════════════════════════════╝
+
+  1) Create Tunnel
+  2) Status
+  3) Stop Tunnel
+  4) Restart Tunnel
+  5) Delete Tunnel
+  6) Core Management
+  0) Exit
+```
+
+### Features
+
+- Create server/client tunnels interactively
+- View tunnel status and logs
+- Start/stop/restart tunnels
+- Health check monitoring
+- Core installation and updates
+- Let's Encrypt certificate automation
+- Systemd service management
+
+---
+
+
+---
+
+<div dir="rtl">
 
 ## درباره تونل معکوس Netrix
 
@@ -780,224 +680,497 @@ netrix -config client-wss.yaml
 2. سرور از طریق این اتصال به خدمات محلی کلاینت دسترسی پیدا می‌کند
 3. کاربران از طریق سرور به خدمات محلی کلاینت متصل می‌شوند
 
-**مزایا:**
-- ✅ عبور از NAT بدون نیاز به port forwarding
-- ✅ عبور از فایروال‌ها از طریق TCP/WebSocket
-- ✅ امنیت با PSK authentication و TLS encryption
-- ✅ Performance بالا برای اتصالات زیاد
-- ✅ Multiplexing: چندین connection روی یک tunnel
-- ✅ پشتیبانی کامل UDP با frame protocol
+### ویژگی‌های کلیدی
 
-**کاربردها:**
-- 🎮 Gaming: اتصال به game servers از پشت NAT
-- 🖥️ Remote Access: دسترسی از راه دور به services محلی
-- 📡 Service Exposure: در دسترس قرار دادن services محلی در اینترنت
-- 🔒 Bypass Restrictions: عبور از محدودیت‌های شبکه
-- 🌐 VPN Alternative: جایگزین برای VPN سنتی
+- ✅ **عبور از NAT** - بدون نیاز به port forwarding
+- ✅ **چندین Transport** - TCP، KCP، WebSocket، Secure WebSocket
+- ✅ **Stream Multiplexing** - چندین اتصال روی یک تونل (SMUX)
+- ✅ **پشتیبانی کامل UDP** - پروتکل Frame برای عبور UDP
+- ✅ **رمزنگاری ChaCha20-Poly1305** - ضد DPI با رمزنگاری AEAD
+- ✅ **حالت Stealth** - Padding تصادفی و Jitter زمانی
+- ✅ **حالت TUN** - VPN لایه 3 برای L2TP/IPsec، WireGuard
+- ✅ **پشتیبانی IPv6** - سازگاری کامل با IPv4 و IPv6
+- ✅ **Multi-Path** - چندین مسیر سرور با failover خودکار
+- ✅ **Health Check API** - endpoint های مانیتورینگ داخلی
+- ✅ **پروفایل‌های عملکرد** - پروفایل‌های بهینه‌سازی از پیش تنظیم شده
+- ✅ **مدیریت لایسنس** - اعتبارسنجی لایسنس داخلی
 
-### معماری Netrix
+### کاربردها
+
+- 🎮 **گیمینگ** - اتصال به سرورهای بازی از پشت NAT
+- 🖥️ **دسترسی از راه دور** - دسترسی به سرویس‌های محلی از راه دور
+- 📡 **انتشار سرویس** - در دسترس قرار دادن سرویس‌های محلی در اینترنت
+- 🔒 **عبور از محدودیت‌ها** - عبور از محدودیت‌های شبکه
+- 🌐 **جایگزین VPN** - جایگزین برای VPN سنتی
+
+---
+
+## معماری
 
 Netrix از معماری چند لایه استفاده می‌کند:
 
-**1. لایه Transport (TCP, KCP, WebSocket, WSS)**
-- اتصال پایه بین کلاینت و سرور
-- TCP: قابل اعتماد و پایدار
-- KCP: سریع و کم latency برای gaming
-- WebSocket: عبور از فایروال‌های HTTP-aware
-- WSS: امن با TLS/SSL
+### 1. لایه Transport (TCP, KCP, WebSocket, WSS)
+- **TCP (tcpmux)** - قابل اعتماد و پایدار
+- **KCP (kcpmux)** - سریع، latency کم برای گیمینگ
+- **WebSocket (wsmux)** - عبور از فایروال‌های HTTP-aware
+- **WSS (wssmux)** - امن با TLS/SSL
 
-**2. لایه SMUX (Stream Multiplexing)**
+### 2. لایه SMUX (Stream Multiplexing)
 - چندین stream روی یک transport connection
 - کاهش overhead و استفاده بهینه
 - امکان اجرای همزمان چندین اتصال
+- mux_con قابل تنظیم برای multiplexing تو در تو
 
-**3. لایه Session Manager**
+### 3. لایه Session Manager
 - مدیریت pool از sessions
-- Load balancing هوشمند (least-loaded)
+- Load balancing آگاه از سلامت (least-loaded)
 - Tracking دقیق streams
+- تشخیص خودکار sessions کند
 
-**4. Frame Protocol برای UDP**
+### 4. Frame Protocol برای UDP
 - Encapsulation UDP packets داخل frames
 - امکان عبور UDP از طریق tunnel
 - مدیریت چندین UDP flow
 
----
+### 5. لایه رمزنگاری (اختیاری)
+- رمزنگاری ChaCha20-Poly1305 AEAD
+- شمارنده nonce جداگانه برای هر جهت
+- Padding تصادفی (ضد DPI)
+- Jitter زمانی (ضد DPI)
 
-## 🚀 شروع سریع با اسکریپت مدیریت
-
-برای مدیریت آسان‌تر تانل‌ها، یک اسکریپت مدیریتی پایتون ارائه می‌دهیم که به صورت خودکار تنظیمات، نصب و بهینه‌سازی سیستم را انجام می‌دهد.
-
-### 🔐 خرید لایسنس
-
-**مهم:** برای استفاده از Netrix، ابتدا باید لایسنس خریداری کنید.
-
-**خرید لایسنس:**
-- 🤖 **ربات تلگرام**: [@mnxcore_bot](https://t.me/mnxcore_bot)
-- 👤 **تماس با سازنده**: [@g0dline](https://t.me/g0dline)
-
-پس از خرید لایسنس، یک کلید لایسنس دریافت خواهید کرد که باید قبل از استفاده از Netrix آن را فعال کنید.
-
-### نصب
-
-```bash
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc
-```
-
-
-
-### امکانات
-
-- ✅ **منوی تعاملی**: رابط کاربری آسان برای مدیریت تانل‌ها
-- ✅ **تنظیمات خودکار**: ساخت خودکار فایل‌های کانفیگ YAML
-- ✅ **مدیریت هسته**: نصب/آپدیت/حذف باینری هسته Netrix
-- ✅ **یکپارچگی با Systemd**: راه‌اندازی خودکار تانل‌ها با systemd
-- ✅ **بهینه‌ساز سیستم**: بهینه‌سازی پارامترهای کرنل لینوکس برای عملکرد بالا
-- ✅ **چند Transport**: پشتیبانی از TCP، KCP، WebSocket و WSS
-- ✅ **مدیریت گواهینامه**: دریافت خودکار گواهینامه Let's Encrypt
-- ✅ **انتخاب پروفایل**: انتخاب از 4 پروفایل عملکردی
-- ✅ **نگاشت پورت**: نگاشت آسان پورت‌های TCP/UDP با پشتیبانی از محدوده
-- 🔐 **مدیریت لایسنس**: فعال‌سازی و اعتبارسنجی لایسنس داخلی
-
-### نحوه استفاده
-
-اسکریپت را اجرا کنید و از منوی تعاملی استفاده کنید:
-
-```bash
-netrix-manager
-```
-
-**گزینه‌های منوی اصلی:**
-1. **ساخت تانل** - ساخت تانل سرور یا کلاینت با راهنمای تعاملی
-2. **وضعیت** - مشاهده تمام تانل‌ها و وضعیت آن‌ها (در حال اجرا/متوقف شده)
-3. **توقف** - توقف تانل‌های در حال اجرا
-4. **راه‌اندازی مجدد** - راه‌اندازی مجدد تانل‌ها
-5. **حذف** - حذف تانل‌ها و فایل‌های کانفیگ آن‌ها
-6. **مدیریت هسته Netrix** - نصب/آپدیت/حذف باینری هسته Netrix
-7. **بهینه‌ساز سیستم** - بهینه‌سازی پارامترهای کرنل لینوکس برای ترافیک بالا
-
-### 📞 پشتیبانی و تماس
-
-**خرید لایسنس:**
-- 🤖 **ربات تلگرام**: [@mnxcore_bot]https://t.me/mnxcore_bot)
-
-**سازنده:**
-- 👤 **تلگرام**: [@g0dline](https://t.me/g0dline)
-
-
-</div>
+### 6. حالت TUN (VPN لایه 3)
+- رابط شبکه مجازی
+- فوروارد کامل پکت‌های IP
+- پیکربندی route
+- پشتیبانی از L2TP/IPsec، WireGuard
 
 ---
 
-<div dir="rtl">
+## پروفایل‌های عملکرد
 
-## تنظیمات دستی
-
-اگر تنظیمات دستی را ترجیح می‌دهید، می‌توانید فایل‌های YAML را خودتان بسازید و Netrix را مستقیماً اجرا کنید.
-
-## تنظیمات سرور (Server Configuration)
-
-### Flags سمت سرور
-
-```bash
-netrix server [OPTIONS]
-```
-
-**تنظیمات پایه:**
-- `-listen string` - آدرس گوش دادن (پیش‌فرض: `:4000`)
-- `-transport string` - نوع transport: `tcpmux|kcpmux|wsmux|wssmux` (پیش‌فرض: `tcpmux`)
-- `-map string` - مپ کردن پورت‌ها: `"tcp::bind->target,udp::bind->target"`
-- `-psk string` - Pre-shared key (الزامی)
-- `-profile string` - پروفایل: `balanced|aggressive|latency|cpu-efficient` (پیش‌فرض: `balanced`)
-- `-verbose` - فعال‌سازی logging دقیق
-- `-cert string` - مسیر فایل گواهینامه TLS (برای wssmux)
-- `-key string` - مسیر فایل private key TLS (برای wssmux)
-
-**تنظیمات SMUX:**
-- `-smux-keepalive int` - فاصله زمانی keepalive برای SMUX (ثانیه، بازنویسی می‌کند profile)
-- `-smux-max-recv int` - حداکثر buffer دریافت برای SMUX (بایت، بازنویسی می‌کند profile)
-- `-smux-max-stream int` - حداکثر buffer stream برای SMUX (بایت، بازنویسی می‌کند profile)
-- `-smux-frame-size int` - اندازه frame برای SMUX (بایت، پیش‌فرض: 32768، بازنویسی می‌کند profile)
-
-**تنظیمات KCP:**
-- `-kcp-nodelay int` - فعال‌سازی nodelay برای KCP (0=غیرفعال, 1=فعال، بازنویسی می‌کند profile)
-- `-kcp-interval int` - فاصله زمانی update برای KCP (میلی‌ثانیه، بازنویسی می‌کند profile)
-- `-kcp-resend int` - آستانه resend سریع برای KCP (بازنویسی می‌کند profile)
-- `-kcp-nc int` - غیرفعال‌سازی congestion control برای KCP (0=غیرفعال, 1=فعال، بازنویسی می‌کند profile)
-- `-kcp-sndwnd int` - اندازه پنجره ارسال برای KCP (بازنویسی می‌کند profile)
-- `-kcp-rcvwnd int` - اندازه پنجره دریافت برای KCP (بازنویسی می‌کند profile)
-- `-kcp-mtu int` - Maximum Transmission Unit برای KCP (بازنویسی می‌کند profile)
-
-</div>
-
----
-
-<div dir="rtl">
-
-## تنظیمات کلاینت (Client Configuration)
-
-### Flags سمت کلاینت
-
-```bash
-netrix client [OPTIONS]
-```
-
-**تنظیمات پایه:**
-- `-server string` - آدرس سرور `host:port` (حالت legacy single-path)
-- `-transport string` - نوع transport: `tcpmux|kcpmux|wsmux|wssmux` (پیش‌فرض: `tcpmux`)
-- `-parallel int` - تعداد تونل‌های موازی (legacy، پیش‌فرض: 1)
-- `-paths string` - حالت multi-path: `"tcpmux:addr:parallel,kcpmux:addr:parallel,..."`
-- `-psk string` - Pre-shared key (باید با سرور مطابقت داشته باشد)
-- `-profile string` - پروفایل: `balanced|aggressive|latency|cpu-efficient` (پیش‌فرض: `balanced`)
-- `-verbose` - فعال‌سازی logging دقیق
-
-**تنظیمات Connection Pool:**
-- `-connection-pool int` - تعداد تونل‌های همزمان (alias برای parallel، پیش‌فرض: 0)
-- `-aggressive-pool` - به صورت تهاجمی تونل‌ها را دوباره dial می‌کند
-- `-retry-interval duration` - فاصله زمانی retry برای خطاهای dial (پیش‌فرض: 3s)
-- `-dial-timeout duration` - Timeout برای dial کردن transport (پیش‌فرض: 10s)
-
-**تنظیمات SMUX:** (مشابه سرور)
-- `-smux-keepalive int`
-- `-smux-max-recv int`
-- `-smux-max-stream int`
-- `-smux-frame-size int`
-
-**تنظیمات KCP:** (مشابه سرور)
-- `-kcp-nodelay int`
-- `-kcp-interval int`
-- `-kcp-resend int`
-- `-kcp-nc int`
-- `-kcp-sndwnd int`
-- `-kcp-rcvwnd int`
-- `-kcp-mtu int`
-
-</div>
-
----
-
-<div dir="rtl">
-
-## پروفایل‌های عملکرد (Performance Profiles)
-
-Netrix شامل 4 پروفایل از پیش تنظیم شده است که برای موارد استفاده مختلف بهینه شده‌اند:
+Netrix شامل 4 پروفایل از پیش تنظیم شده است:
 
 | پروفایل | کاربرد | SMUX Keepalive | SMUX Buffer | KCP Interval | KCP Windows | بهترین برای |
 |---------|--------|----------------|-------------|--------------|-------------|-------------|
-| **balanced** (پیش‌فرض) | استفاده عمومی | 8s | 8MB | 10ms | 768/768 | بیشتر کاربران، عملکرد متعادل |
-| **aggressive** | سرعت بالا | 5s | 16MB | 8ms | 1024/1024 | حداکثر سرعت، مصرف CPU بیشتر |
-| **latency** | تاخیر کم | 3s | 4MB | 8ms | 768/768 | گیمینگ، اپلیکیشن‌های real-time |
-| **cpu-efficient** | مصرف CPU کم | 10s | 8MB | 20ms | 512/512 | سرورهای محدود از نظر منابع |
+| **balanced** (پیش‌فرض) | استفاده عمومی | 20s | 4MB | 20ms | 512/512 | بیشتر کاربران |
+| **aggressive** | سرعت بالا | 30s | 8MB | 10ms | 2048/2048 | حداکثر سرعت |
+| **latency** | تاخیر کم | 5s | 2MB | 5ms | 256/256 | گیمینگ، real-time |
+| **cpu-efficient** | مصرف CPU کم | 60s | 2MB | 50ms | 128/128 | سرورهای محدود |
 
-**جزئیات پروفایل‌ها:**
+### جزئیات پروفایل‌ها
 
-- **balanced**: بهترین عملکرد کلی برای بیشتر کاربران. تعادل خوب بین latency، throughput و مصرف CPU.
-- **aggressive**: حداکثر throughput و سرعت. CPU و حافظه بیشتری استفاده می‌کند. بهترین برای اپلیکیشن‌های پهن‌باند.
-- **latency**: بهینه شده برای latency پایین. بهترین برای گیمینگ، تماس ویدیویی و اپلیکیشن‌های real-time (مثل اینستاگرام).
-- **cpu-efficient**: مصرف CPU را به حداقل می‌رساند. بهترین برای سرورهای محدود یا هنگام اجرای چندین instance.
+- **balanced**: بهترین عملکرد کلی. تعادل خوب بین latency، throughput و مصرف CPU.
+- **aggressive**: حداکثر throughput. CPU و حافظه بیشتری استفاده می‌کند. بهترین برای اپلیکیشن‌های پهن‌باند.
+- **latency**: بهینه شده برای latency پایین. بهترین برای گیمینگ، تماس ویدیویی و اپلیکیشن‌های real-time.
+- **cpu-efficient**: مصرف CPU را به حداقل می‌رساند. بهترین برای سرورهای محدود.
 
 ---
 
+## نصب
 
+### استفاده از netrixcore.py (توصیه شده)
+
+```bash
+# دانلود و اجرای اسکریپت مدیریت
+wget -O netrixcore.py https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrixcore.py
+chmod +x netrixcore.py
+python3 netrixcore.py
+```
+
+### نصب دستی
+
+```bash
+# دانلود باینری برای معماری شما
+# AMD64
+wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-amd64.tar.gz
+tar -xzf netrix-amd64.tar.gz
+mv netrix /usr/local/bin/
+
+# ARM64
+wget https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-arm64.tar.gz
+tar -xzf netrix-arm64.tar.gz
+mv netrix /usr/local/bin/
+```
+
+---
+
+## پیکربندی
+
+### پیکربندی سرور (ایران)
+
+```yaml
+mode: "server"
+listen: "0.0.0.0:4000"           # برای IPv6: [::]:4000
+transport: "tcpmux"              # tcpmux|kcpmux|wsmux|wssmux
+psk: "کلید_مخفی_شما"
+profile: "balanced"              # balanced|aggressive|latency|cpu-efficient
+
+# مپ کردن پورت‌ها (فرمت ساده)
+tcp_ports: [2066, 9988, 6665]    # پورت‌های TCP برای فوروارد
+udp_ports: [2066, 9988]          # پورت‌های UDP برای فوروارد
+
+# تنظیمات SMUX
+smux:
+  keepalive: 20                  # ثانیه (پیش‌فرض: 20)
+  max_recv: 4194304              # 4MB (پیش‌فرض)
+  max_stream: 2097152            # 2MB (پیش‌فرض)
+  frame_size: 32768              # 32KB (پیش‌فرض)
+  version: 2                     # نسخه SMUX
+  mux_con: 8                     # اتصالات multiplexed
+
+# تنظیمات KCP (فقط برای kcpmux)
+kcp:
+  nodelay: 0                     # 0=batching، 1=بدون batching
+  interval: 20                   # میلی‌ثانیه (فاصله update)
+  resend: 2                      # آستانه resend سریع
+  nc: 0                          # 0=کنترل ازدحام، 1=بدون CC
+  sndwnd: 512                    # پنجره ارسال
+  rcvwnd: 512                    # پنجره دریافت
+  mtu: 1350                      # MTU
+
+# تنظیمات پیشرفته
+advanced:
+  tcp_nodelay: true
+  tcp_keepalive: 30              # ثانیه
+  tcp_read_buffer: 8388608       # 8MB
+  tcp_write_buffer: 8388608      # 8MB
+  cleanup_interval: 60           # ثانیه
+  session_timeout: 120           # ثانیه
+  connection_timeout: 600        # ثانیه
+  stream_timeout: 21600          # 6 ساعت
+  stream_idle_timeout: 600       # 10 دقیقه
+  max_connections: 0             # 0 = نامحدود (محدودیت 1M)
+  max_udp_flows: 5000
+  udp_flow_timeout: 600          # ثانیه
+
+# رمزنگاری (ChaCha20-Poly1305)
+encryption:
+  enabled: false                 # فعال‌سازی رمزنگاری
+  key: ""                        # خالی = استفاده از PSK
+
+# Stealth (ضد DPI)
+stealth:
+  padding_enabled: false
+  padding_min: 0
+  padding_max: 128
+  jitter_enabled: false
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+
+# حالت TUN (VPN لایه 3)
+tun:
+  enabled: false
+  name: "netrix0"
+  local: "10.200.0.1/30"
+  mtu: 1400
+  routes: []
+
+# Health check
+health_port: 19080               # پیش‌فرض: 19080
+heartbeat: 20                    # ثانیه (پیش‌فرض: 20)
+verbose: false
+```
+
+### پیکربندی کلاینت (خارج)
+
+```yaml
+mode: "client"
+psk: "کلید_مخفی_شما"
+profile: "balanced"
+
+# پشتیبانی Multi-path (چندین سرور)
+paths:
+  - transport: "tcpmux"
+    addr: "SERVER_IP:4000"       # IPv6: [2001:db8::1]:4000
+    connection_pool: 24          # توصیه: 8-24
+    aggressive_pool: false
+    retry_interval: 3            # ثانیه
+    dial_timeout: 10             # ثانیه
+  # سرور پشتیبان (اختیاری)
+  - transport: "tcpmux"
+    addr: "BACKUP_IP:4000"
+    connection_pool: 8
+    retry_interval: 5
+    dial_timeout: 10
+
+# تنظیمات SMUX
+smux:
+  keepalive: 20
+  max_recv: 4194304
+  max_stream: 2097152
+  frame_size: 32768
+  version: 2
+  mux_con: 10                    # توصیه: 8-16
+
+# تنظیمات KCP (اگر از kcpmux استفاده می‌کنید)
+kcp:
+  nodelay: 0
+  interval: 20
+  resend: 2
+  nc: 0
+  sndwnd: 512
+  rcvwnd: 512
+  mtu: 1350
+
+# تنظیمات پیشرفته
+advanced:
+  tcp_nodelay: true
+  tcp_keepalive: 30
+  tcp_read_buffer: 8388608
+  tcp_write_buffer: 8388608
+  cleanup_interval: 60
+  session_timeout: 120
+  connection_timeout: 600
+  stream_timeout: 21600
+  stream_idle_timeout: 600
+  max_connections: 0
+  max_udp_flows: 5000
+  udp_flow_timeout: 600
+
+# رمزنگاری (باید با سرور مطابقت داشته باشد)
+encryption:
+  enabled: false
+  key: ""
+
+# Stealth (باید با سرور مطابقت داشته باشد)
+stealth:
+  padding_enabled: false
+  padding_min: 0
+  padding_max: 128
+  jitter_enabled: false
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+
+# حالت TUN (باید با سرور مطابقت داشته باشد)
+tun:
+  enabled: false
+  name: "netrix0"
+  local: "10.200.0.2/30"         # متفاوت از سرور!
+  mtu: 1400
+  routes: ["0.0.0.0/0"]          # Route کردن همه ترافیک
+
+heartbeat: 20
+verbose: false
+```
+
+---
+
+## اجرای Netrix
+
+### استفاده از فایل کانفیگ
+
+```bash
+# سرور
+netrix -config /root/server4000.yaml
+
+# کلاینت
+netrix -config /root/client_SERVER_IP_4000.yaml
+```
+
+### استفاده از Systemd (توصیه شده)
+
+اسکریپت `netrixcore.py` به صورت خودکار سرویس‌های systemd ایجاد می‌کند:
+
+```bash
+# بررسی وضعیت
+systemctl status netrix-server4000
+
+# شروع/توقف/ریستارت
+systemctl start netrix-server4000
+systemctl stop netrix-server4000
+systemctl restart netrix-server4000
+
+# مشاهده لاگ‌ها
+journalctl -u netrix-server4000 -f
+```
+
+---
+
+## Health Check API
+
+Netrix endpoint های health check داخلی روی پورت 19080 ارائه می‌دهد:
+
+### Endpoint ها
+
+| Endpoint | توضیحات |
+|----------|---------|
+| `/health` | بررسی ساده liveness |
+| `/health/ready` | بررسی readiness (sessions فعال) |
+| `/health/detailed` | آمار دقیق (JSON) |
+
+### نمونه پاسخ (/health/detailed)
+
+```json
+{
+  "status": "healthy",
+  "sessions": 4,
+  "streams": 128,
+  "rtt_ms": 45,
+  "tcp_in": {"bytes": 1073741824, "formatted": "1.00 GB"},
+  "tcp_out": {"bytes": 536870912, "formatted": "512.00 MB"},
+  "udp_in": {"bytes": 104857600, "formatted": "100.00 MB"},
+  "udp_out": {"bytes": 52428800, "formatted": "50.00 MB"},
+  "total_traffic": {"bytes": 1768000000, "formatted": "1.65 GB"}
+}
+```
+
+---
+
+## ویژگی‌های پیشرفته
+
+### رمزنگاری (ضد DPI)
+
+فعال‌سازی رمزنگاری ChaCha20-Poly1305 برای مبهم‌سازی ترافیک:
+
+```yaml
+encryption:
+  enabled: true
+  key: ""  # خالی = استفاده از PSK به عنوان کلید
+
+stealth:
+  padding_enabled: true    # Padding تصادفی
+  padding_min: 0
+  padding_max: 32
+  jitter_enabled: false    # Jitter زمانی (latency اضافه می‌کند)
+  jitter_min_ms: 5
+  jitter_max_ms: 20
+```
+
+### حالت TUN (VPN لایه 3)
+
+فعال‌سازی حالت TUN برای عملکرد کامل VPN:
+
+**سرور:**
+```yaml
+tun:
+  enabled: true
+  name: "netrix0"
+  local: "10.200.0.1/30"
+  mtu: 1400
+  routes: []
+```
+
+**کلاینت:**
+```yaml
+tun:
+  enabled: true
+  name: "netrix0"
+  local: "10.200.0.2/30"
+  mtu: 1400
+  routes: ["0.0.0.0/0"]  # Route کردن همه ترافیک
+```
+
+### Multi-Path (Failover)
+
+پیکربندی چندین سرور برای redundancy:
+
+```yaml
+paths:
+  - transport: "tcpmux"
+    addr: "PRIMARY_IP:4000"
+    connection_pool: 16
+  - transport: "tcpmux"
+    addr: "BACKUP_IP:4000"
+    connection_pool: 8
+  - transport: "kcpmux"
+    addr: "BACKUP2_IP:4001"
+    connection_pool: 4
+```
+
+### پشتیبانی IPv6
+
+**سرور (گوش دادن روی همه رابط‌ها):**
+```yaml
+listen: "[::]:4000"  # IPv4 و IPv6
+```
+
+**کلاینت (اتصال به سرور IPv6):**
+```yaml
+paths:
+  - addr: "[2001:db8::1]:4000"
+```
+
+---
+
+## عیب‌یابی
+
+### مشکلات رایج
+
+1. **Connection refused**
+   - بررسی اجرای سرور: `systemctl status netrix-server*`
+   - بررسی فایروال: `ufw status` یا `iptables -L`
+   - تأیید باز بودن پورت: `netstat -tlnp | grep 4000`
+
+2. **Latency بالا**
+   - استفاده از پروفایل `latency`
+   - تغییر به transport KCP
+   - کاهش اندازه `connection_pool`
+
+3. **قطع اتصال**
+   - افزایش `session_timeout` و `stream_timeout`
+   - فعال‌سازی `aggressive_pool` روی کلاینت
+   - بررسی پایداری شبکه
+
+4. **خطاهای لایسنس**
+   - تأیید دسترسی به سرور لایسنس
+   - بررسی ثبت IP
+
+### حالت Debug
+
+فعال‌سازی verbose logging:
+
+```yaml
+verbose: true
+```
+
+یا از طریق خط فرمان:
+```bash
+netrix -config config.yaml -verbose
+```
+
+### Health Check
+
+```bash
+# بررسی ساده
+curl http://localhost:19080/health
+
+# آمار دقیق
+curl http://localhost:19080/health/detailed | jq
+```
+
+---
+
+## اسکریپت مدیریت netrixcore.py
+
+اسکریپت مدیریت Python یک منوی تعاملی ارائه می‌دهد:
+
+```
+╔══════════════════════════════════════════════════════════╗
+║                    Netrix Management                      ║
+╚══════════════════════════════════════════════════════════╝
+
+  1) Create Tunnel
+  2) Status
+  3) Stop Tunnel
+  4) Restart Tunnel
+  5) Delete Tunnel
+  6) Core Management
+  0) Exit
+```
+
+### ویژگی‌ها
+
+- ایجاد تونل‌های سرور/کلاینت به صورت تعاملی
+- مشاهده وضعیت و لاگ تونل‌ها
+- شروع/توقف/ریستارت تونل‌ها
+- مانیتورینگ health check
+- نصب و به‌روزرسانی هسته
+- اتوماسیون گواهینامه Let's Encrypt
+- مدیریت سرویس systemd
+
+</div>
+
+---
 
 ## License
 
