@@ -16,8 +16,8 @@ except ImportError:
 ROOT_DIR = Path("/root")
 NETRIX_BINARY = "/usr/local/bin/netrix"
 NETRIX_RELEASE_URLS = {
-    "amd64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v2.0.0/netrix-amd64.tar.gz",
-    "arm64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v2.0.0/netrix-arm64.tar.gz"
+    "amd64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-amd64.tar.gz",
+    "arm64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v1.0.0/netrix-arm64.tar.gz"
 }
 
 FG_BLACK = "\033[30m"
@@ -75,6 +75,21 @@ def is_port_in_use(port: int, protocol: str = "tcp", host: str = "0.0.0.0") -> b
         except OSError:
             return True
     return False
+
+def is_ipv6_available() -> bool:
+    """بررسی فعال بودن IPv6 روی سیستم"""
+    try:
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(('::', 0))
+            sock.close()
+            return True
+        except OSError:
+            sock.close()
+            return False
+    except (socket.error, OSError):
+        return False
 
 def ask_int(prompt, min_=1, max_=65535, default=None):
     while True:
@@ -491,16 +506,13 @@ def write_yaml_with_comments(file_path: Path, data: dict, comments: dict = None)
                     lines.append(f"{'  ' * indent}{key}:")
                 write_dict(value, indent + 1, full_key)
             elif isinstance(value, list):
-                # لیست‌های ساده (int, str) به صورت inline نوشته بشن
                 if value and all(isinstance(item, (int, str, float)) and not isinstance(item, dict) for item in value):
-                    # Inline format: [1, 2, 3]
                     inline_list = "[" + ", ".join(str(item) for item in value) + "]"
                     if comment:
                         lines.append(f"{'  ' * indent}{key}: {inline_list}  # {comment}")
                     else:
                         lines.append(f"{'  ' * indent}{key}: {inline_list}")
                 else:
-                    # Multi-line format for complex items
                     if comment:
                         lines.append(f"{'  ' * indent}{key}:  # {comment}")
                     else:
@@ -509,14 +521,41 @@ def write_yaml_with_comments(file_path: Path, data: dict, comments: dict = None)
                         if isinstance(item, dict):
                             lines.append(f"{'  ' * (indent + 1)}-")
                             for k, v in item.items():
-                                lines.append(f"{'  ' * (indent + 2)}{k}: {v}")
+                                if isinstance(v, bool):
+                                    fv = "true" if v else "false"
+                                elif v is None:
+                                    fv = '""'
+                                else:
+                                    sv = str(v)
+                                    if isinstance(v, str) and (sv.startswith('[') or sv.startswith('{') or ':' in sv or '#' in sv):
+                                        fv = f'"{sv}"'
+                                    else:
+                                        fv = sv if sv != "" else '""'
+                                lines.append(f"{'  ' * (indent + 2)}{k}: {fv}")
                         else:
                             lines.append(f"{'  ' * (indent + 1)}- {item}")
             else:
-                if comment:
-                    lines.append(f"{'  ' * indent}{key}: {value}  # {comment}")
+                if isinstance(value, bool):
+                    formatted_value = "true" if value else "false"
+                elif value is None:
+                    formatted_value = '""'
                 else:
-                    lines.append(f"{'  ' * indent}{key}: {value}")
+                    str_value = str(value)
+                    needs_quote = (
+                        isinstance(value, str) and 
+                        (str_value.startswith('[') or str_value.startswith('{') or 
+                         ':' in str_value or '#' in str_value or 
+                         str_value.startswith('*') or str_value.startswith('&'))
+                    )
+                    if needs_quote:
+                        formatted_value = f'"{str_value}"'
+                    else:
+                        formatted_value = str_value if str_value != "" else '""'
+                
+                if comment:
+                    lines.append(f"{'  ' * indent}{key}: {formatted_value}  # {comment}")
+                else:
+                    lines.append(f"{'  ' * indent}{key}: {formatted_value}")
     
     write_dict(data)
     
@@ -580,13 +619,11 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
     
     yaml_data["verbose"] = cfg.get("verbose", False)
     
-    # Encryption settings (ChaCha20-Poly1305) - always included
     yaml_data["encryption"] = {
         "enabled": cfg.get("encryption_enabled", False),
-        "key": cfg.get("encryption_key", "")  # If empty, PSK will be used
+        "key": cfg.get("encryption_key", "")
     }
     
-    # Stealth settings (anti-DPI) - always included
     yaml_data["stealth"] = {
         "padding_enabled": cfg.get("stealth_padding", False),
         "padding_min": 0,
@@ -596,7 +633,6 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
         "jitter_max_ms": 20
     }
 
-    # Health check port - always included
     yaml_data["health_port"] = cfg.get('health_port', 19080)
     
     if cfg.get("cert_file") and cfg.get("key_file"):
@@ -609,12 +645,10 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
     if "heartbeat" in cfg:
         yaml_data["heartbeat"] = cfg['heartbeat']
     
-    # فرمت جدید: tcp_ports و udp_ports (ساده‌تر)
     if cfg.get('maps'):
         tcp_ports = []
         udp_ports = []
         for m in cfg['maps']:
-            # استخراج پورت از bind address (مثلاً "0.0.0.0:500" -> 500)
             port = int(m['bind'].split(':')[-1])
             if m['type'] == 'tcp':
                 tcp_ports.append(port)
@@ -626,8 +660,7 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
         if udp_ports:
             yaml_data["udp_ports"] = udp_ports
     
-    # TUN Mode configuration - همیشه اضافه می‌شه (حتی اگه خاموش باشه)
-    tun_cfg = cfg.get("tun_config") or {}  # اگه None باشه، {} بشه
+    tun_cfg = cfg.get("tun_config") or {}
     yaml_data["tun"] = {
         "enabled": tun_cfg.get("enabled", False),
         "name": tun_cfg.get("name", "netrix0"),
@@ -699,12 +732,13 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
 
 def create_client_config_file(cfg: dict) -> Path:
     """ساخت فایل کانفیگ YAML برای کلاینت"""
-    paths = cfg.get('paths', [])
-    if paths:
-        first_addr = paths[0].get('addr', 'unknown').replace(':', '_').replace('.', '_')
-        config_path = ROOT_DIR / f"client_{first_addr}.yaml"
-    else:
-        config_path = ROOT_DIR / f"client_{int(time.time())}.yaml"
+    tport = cfg.get('tport', 0)
+    if not tport:
+        paths = cfg.get('paths', [])
+        if paths:
+            addr = paths[0].get('addr', '')
+            tport = addr.split(':')[-1] if ':' in addr else '0'
+    config_path = ROOT_DIR / f"client{tport}.yaml"
     
     profile = cfg.get('profile', 'balanced')
     
@@ -769,13 +803,11 @@ def create_client_config_file(cfg: dict) -> Path:
     
     yaml_data["verbose"] = cfg.get("verbose", False)
     
-    # Encryption settings (ChaCha20-Poly1305) - همیشه اضافه می‌شه
     yaml_data["encryption"] = {
         "enabled": cfg.get("encryption_enabled", False),
-        "key": cfg.get("encryption_key", "")  # If empty, PSK will be used
+        "key": cfg.get("encryption_key", "")
     }
     
-    # Stealth settings (anti-DPI) - همیشه اضافه می‌شه
     yaml_data["stealth"] = {
         "padding_enabled": cfg.get("stealth_padding", False),
         "padding_min": 0,
@@ -785,7 +817,6 @@ def create_client_config_file(cfg: dict) -> Path:
         "jitter_max_ms": 20
     }
     
-    # Health check port - always included
     yaml_data["health_port"] = cfg.get('health_port', 19080)
     
     if "heartbeat" in cfg:
@@ -802,14 +833,13 @@ def create_client_config_file(cfg: dict) -> Path:
         if "udp_data_slice_size" in buffer_config:
             yaml_data["advanced"]["udp_data_slice_size"] = buffer_config["udp_data_slice_size"]
     
-    # TUN Mode configuration - همیشه اضافه می‌شه (حتی اگه خاموش باشه)
-    tun_cfg = cfg.get("tun_config") or {}  # اگه None باشه، {} بشه
+    tun_cfg = cfg.get("tun_config") or {}
     yaml_data["tun"] = {
         "enabled": tun_cfg.get("enabled", False),
         "name": tun_cfg.get("name", "netrix0"),
         "local": tun_cfg.get("local", "10.200.0.2/30"),
         "mtu": tun_cfg.get("mtu", 1400),
-        "routes": tun_cfg.get("routes", [])  # خالی وقتی TUN غیرفعاله
+        "routes": tun_cfg.get("routes", [])
     }
 
     comments = {
@@ -1289,9 +1319,14 @@ def create_server_tunnel():
         
         print(f"\n  {BOLD}{FG_CYAN}Server Configuration:{RESET}")
         
-        # IPv6 support
-        print(f"  {FG_WHITE}Note: For IPv6, server will listen on both IPv4 and IPv6{RESET}")
-        use_ipv6 = ask_yesno(f"  {BOLD}Enable IPv6 support?{RESET}", default=False)
+        use_ipv6 = False
+        if is_ipv6_available():
+            print(f"  {FG_GREEN}✅ IPv6 is available on this system{RESET}")
+            print(f"  {FG_WHITE}Note: For IPv6, server will listen on both IPv4 and IPv6{RESET}")
+            use_ipv6 = ask_yesno(f"  {BOLD}Enable IPv6 support?{RESET}", default=False)
+        else:
+            print(f"  {FG_YELLOW}⚠️  IPv6 is NOT available on this system (disabled or not supported){RESET}")
+            print(f"  {FG_WHITE}Server will listen on IPv4 only{RESET}")
         
         while True:
             tport = ask_int(f"  {BOLD}Tunnel Port:{RESET}", min_=1, max_=65535)
@@ -1301,16 +1336,14 @@ def create_server_tunnel():
                     continue
             break
         
-        # تنظیم listen address بر اساس IPv6
         if use_ipv6:
-            listen_addr = f"[::]:{tport}"  # گوش بده روی همه IPv4 و IPv6
+            listen_addr = f"[::]:{tport}"
         else:
-            listen_addr = f"0.0.0.0:{tport}"  # فقط IPv4
+            listen_addr = f"0.0.0.0:{tport}"
         
         print(f"\n  {BOLD}{FG_CYAN}Security Settings:{RESET}")
         psk = ask_nonempty(f"  {BOLD}Pre-shared Key (PSK):{RESET}")
         
-        # Encryption (بعد از PSK - مرتبط با امنیت)
         encryption_enabled = ask_yesno(f"  {BOLD}Enable encryption (ChaCha20-Poly1305)?{RESET} {FG_WHITE}(anti-DPI){RESET}", default=False)
         encryption_key = ""
         if encryption_enabled:
@@ -1504,7 +1537,6 @@ def create_server_tunnel():
                 "udp_data_slice_size": 0
             }
         
-        # Stealth settings - only ask if encryption is enabled
         stealth_padding = False
         stealth_padding_max = 0
         stealth_jitter = False
@@ -1519,7 +1551,6 @@ def create_server_tunnel():
             
             stealth_jitter = ask_yesno(f"  {BOLD}Enable timing jitter?{RESET} {FG_WHITE}(adds latency, breaks timing patterns){RESET}", default=False)
         
-        # TUN Mode (Layer 3 VPN) - برای L2TP/IPsec و پروتکل‌های VPN
         print(f"\n  {BOLD}{FG_CYAN}TUN Mode (Layer 3 VPN):{RESET}")
         print(f"  {FG_WHITE}TUN mode creates a virtual network interface for full VPN functionality.{RESET}")
         print(f"  {FG_WHITE}Required for: L2TP/IPsec, OpenVPN (tun), WireGuard, etc.{RESET}")
@@ -1533,7 +1564,6 @@ def create_server_tunnel():
             tun_local = ask_nonempty(f"  {BOLD}Local IP (CIDR):{RESET} {FG_WHITE}(e.g., 10.200.0.1/30){RESET}", default="10.200.0.1/30")
             tun_mtu = ask_int(f"  {BOLD}MTU:{RESET}", min_=576, max_=9000, default=1400)
             
-            # Routes (optional)
             tun_routes = []
             print(f"  {FG_WHITE}Routes: Add networks to route through TUN (e.g., 192.168.1.0/24){RESET}")
             while True:
@@ -1642,9 +1672,7 @@ def create_client_tunnel():
         
         tport = ask_int(f"  {BOLD}Tunnel Port:{RESET}", min_=1, max_=65535)
         
-        # تشخیص IPv6 و فرمت صحیح
         if ':' in server_ip and not server_ip.startswith('['):
-            # IPv6 address - نیاز به براکت داره
             server_addr = f"[{server_ip}]:{tport}"
             print(f"  {FG_GREEN}✅ IPv6 detected, formatted as: {server_addr}{RESET}")
         else:
@@ -1653,7 +1681,6 @@ def create_client_tunnel():
         print(f"\n  {BOLD}{FG_CYAN}Security Settings:{RESET}")
         psk = ask_nonempty(f"  {BOLD}Pre-shared Key (PSK):{RESET}")
         
-        # Encryption (بعد از PSK - مرتبط با امنیت)
         print(f"  {FG_WHITE}Note: Must match server settings!{RESET}")
         encryption_enabled = ask_yesno(f"  {BOLD}Enable encryption (ChaCha20-Poly1305)?{RESET} {FG_WHITE}(anti-DPI){RESET}", default=False)
         encryption_key = ""
@@ -1677,7 +1704,7 @@ def create_client_tunnel():
         paths = []
         
         print(f"\n  {BOLD}{FG_CYAN}Connection Settings:{RESET}")
-        connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-16 ){RESET}", min_=1, max_=100, default=24)
+        connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-16){RESET}", min_=1, max_=100, default=8)
         mux_con = ask_int(f"  {BOLD}Mux Con:{RESET} {FG_WHITE}(recommended: 10){RESET}", min_=1, max_=100, default=10)
         retry_interval = ask_int(f"  {BOLD}Retry Interval:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=3)
         dial_timeout = ask_int(f"  {BOLD}Dial Timeout:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=10)
@@ -1710,7 +1737,6 @@ def create_client_tunnel():
             
             new_tport = ask_int(f"  {BOLD}Tunnel Port:{RESET}", min_=1, max_=65535)
             
-            # تشخیص IPv6 و فرمت صحیح
             if ':' in new_server_ip and not new_server_ip.startswith('['):
                 new_server_addr = f"[{new_server_ip}]:{new_tport}"
             else:
@@ -1724,7 +1750,7 @@ def create_client_tunnel():
             new_transport_choice = ask_int(f"\n  {BOLD}Select transport:{RESET}", min_=1, max_=4, default=1)
             new_transport = transports[new_transport_choice]
             
-            new_connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-16 ){RESET}", min_=1, max_=100, default=24)
+            new_connection_pool = ask_int(f"  {BOLD}Connection Pool:{RESET} {FG_WHITE}(recommended: 8-16){RESET}", min_=1, max_=100, default=8)
             
             new_retry_interval = ask_int(f"  {BOLD}Retry Interval:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=3)
             new_dial_timeout = ask_int(f"  {BOLD}Dial Timeout:{RESET} {FG_WHITE}(seconds){RESET}", min_=1, max_=60, default=10)
@@ -1762,7 +1788,6 @@ def create_client_tunnel():
                 "udp_data_slice_size": 0
             }
         
-        # Stealth settings - only ask if encryption is enabled
         stealth_padding = False
         stealth_padding_max = 0
         stealth_jitter = False
@@ -1778,7 +1803,6 @@ def create_client_tunnel():
             
             stealth_jitter = ask_yesno(f"  {BOLD}Enable timing jitter?{RESET} {FG_WHITE}(adds latency, breaks timing patterns){RESET}", default=False)
         
-        # TUN Mode (Layer 3 VPN) - برای L2TP/IPsec و پروتکل‌های VPN
         print(f"\n  {BOLD}{FG_CYAN}TUN Mode (Layer 3 VPN):{RESET}")
         print(f"  {FG_WHITE}TUN mode creates a virtual network interface for full VPN functionality.{RESET}")
         print(f"  {FG_WHITE}Required for: L2TP/IPsec, OpenVPN (tun), WireGuard, etc.{RESET}")
@@ -1794,7 +1818,6 @@ def create_client_tunnel():
             tun_local = ask_nonempty(f"  {BOLD}Local IP (CIDR):{RESET} {FG_WHITE}(e.g., 10.200.0.2/30){RESET}", default="10.200.0.2/30")
             tun_mtu = ask_int(f"  {BOLD}MTU:{RESET}", min_=576, max_=9000, default=1400)
             
-            # Routes (optional)
             tun_routes = []
             print(f"  {FG_WHITE}Routes: Add networks to route through TUN (e.g., 0.0.0.0/0 for all traffic){RESET}")
             while True:
