@@ -312,20 +312,20 @@ def get_default_kcp_config(profile: str = "balanced") -> dict:
     return profiles.get(profile.lower(), profiles["balanced"])
 
 def get_default_advanced_config(transport: str) -> dict:
-    """تنظیمات پیش‌فرض Advanced بر اساس transport - همگام با netrix.go"""
+    """تنظیمات پیش‌فرض Advanced بر اساس transport - همگام با netrix.go فایل 3"""
     base_config = {
         "tcp_nodelay": True,
         "tcp_keepalive": 30,          # 30s - استاندارد
-        "tcp_read_buffer": 4194304,   # 4MB - استاندارد
-        "tcp_write_buffer": 4194304,  # 4MB - استاندارد
-        "cleanup_interval": 60,       # 60s - افزایش برای scale بالا
-        "session_timeout": 600,       # 10min - افزایش برای stability
-        "connection_timeout": 900,    # 15min - افزایش برای کاربران زیاد
-        "stream_timeout": 28800,      # 8h - برای session های طولانی
-        "stream_idle_timeout": 1800,  # 30min - افزایش برای OpenVPN
+        "tcp_read_buffer": 8388608,   # 8MB - مثل فایل 3
+        "tcp_write_buffer": 8388608,  # 8MB - مثل فایل 3
+        "cleanup_interval": 60,       # 60s - مثل فایل 3
+        "session_timeout": 120,       # 2min - مثل فایل 3
+        "connection_timeout": 600,    # 10min - مثل فایل 3
+        "stream_timeout": 21600,      # 6h - مثل فایل 3
+        "stream_idle_timeout": 600,   # 10min - مثل فایل 3
         "max_connections": 0,    
-        "max_udp_flows": 100000,      # 100,000 - برای 10,000+ کاربر
-        "udp_flow_timeout": 7200,     # 2h - افزایش برای OpenVPN/L2TP
+        "max_udp_flows": 5000,        # 5000 - مثل فایل 3
+        "udp_flow_timeout": 600,      # 10min - مثل فایل 3
         "tls_insecure_skip_verify": True,  # برای self-signed certs
         "verbose": False
     }
