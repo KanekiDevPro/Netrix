@@ -2,7 +2,7 @@
 """
 Netrix Core - اسکریپت مدیریت تانل Netrix
 """
-import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json, stat
+import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json, stat, hashlib
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 
@@ -13,7 +13,7 @@ except ImportError:
     sys.exit(1)
 
 # ========== Version ==========
-VERSION = "2.0.2"
+VERSION = "2.0.3"
 
 ROOT_DIR = Path("/root")
 NETRIX_BINARY = "/usr/local/bin/netrix"
@@ -235,36 +235,32 @@ def get_default_smux_config(profile: str = "balanced") -> dict:
     """تنظیمات پیش‌فرض SMUX بر اساس profile - همگام با netrix.go"""
     profiles = {
         "balanced": {
-            "keepalive": 15,       # 15s - استاندارد
-            "max_recv": 4194304,   # 4MB - استاندارد
-            "max_stream": 1048576, # 1MB - استاندارد
-            "frame_size": 32768,   # 32KB - استاندارد
-            "version": 2,
-            "mux_con": 4           # 4 - استاندارد
+            "keepalive": 20,   
+            "max_recv": 4194304,  
+            "max_stream": 2097152, 
+            "frame_size": 32768,   
+            "version": 2
         },
         "aggressive": {
-            "keepalive": 20,       # 20s
-            "max_recv": 8388608,   # 8MB
-            "max_stream": 2097152, # 2MB
-            "frame_size": 32768,   # 32KB
-            "version": 2,
-            "mux_con": 8           # 8
+            "keepalive": 30,     
+            "max_recv": 8388608, 
+            "max_stream": 4194304,
+            "frame_size": 65535,  
+            "version": 2
         },
         "latency": {
-            "keepalive": 10,       # 10s
-            "max_recv": 2097152,   # 2MB
-            "max_stream": 1048576, # 1MB
-            "frame_size": 16384,   # 16KB
-            "version": 2,
-            "mux_con": 2           # 2
+            "keepalive": 5,       
+            "max_recv": 2097152,   
+            "max_stream": 1048576, 
+            "frame_size": 16384,   
+            "version": 2
         },
         "cpu-efficient": {
-            "keepalive": 30,       # 30s
-            "max_recv": 2097152,   # 2MB
-            "max_stream": 1048576, # 1MB
-            "frame_size": 16384,   # 16KB
-            "version": 2,
-            "mux_con": 2           # 2
+            "keepalive": 60,      
+            "max_recv": 2097152,   
+            "max_stream": 1048576,
+            "frame_size": 16384,  
+            "version": 2
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
@@ -274,39 +270,39 @@ def get_default_kcp_config(profile: str = "balanced") -> dict:
     profiles = {
         "balanced": {
             "nodelay": 0,      
-            "interval": 30,    # 30ms - استاندارد
+            "interval": 20,  
             "resend": 2,       
             "nc": 0,         
-            "sndwnd": 256,     # 256 - استاندارد
-            "rcvwnd": 256,
+            "sndwnd": 512,   
+            "rcvwnd": 512,
             "mtu": 1350
         },
         "aggressive": {
             "nodelay": 0,      
-            "interval": 20,    # 20ms
+            "interval": 10,  
             "resend": 2,
             "nc": 1,          
-            "sndwnd": 512,     # 512
-            "rcvwnd": 512,
+            "sndwnd": 2048,  
+            "rcvwnd": 2048,
             "mtu": 1400      
         },
         "latency": {
             "nodelay": 1,     
-            "interval": 10,    # 10ms
+            "interval": 5,   
             "resend": 1,       
             "nc": 1,           
-            "sndwnd": 128,     # 128
-            "rcvwnd": 128,
+            "sndwnd": 256,    
+            "rcvwnd": 256,
             "mtu": 1200        
         },
         "cpu-efficient": {
             "nodelay": 0,      
-            "interval": 40,    # 40ms
-            "resend": 2,     
+            "interval": 50,   
+            "resend": 3,    
             "nc": 0,            
             "sndwnd": 128,     
             "rcvwnd": 128,
-            "mtu": 1350
+            "mtu": 1400     
         }
     }
     return profiles.get(profile.lower(), profiles["balanced"])
@@ -315,31 +311,30 @@ def get_default_advanced_config(transport: str) -> dict:
     """تنظیمات پیش‌فرض Advanced بر اساس transport - همگام با netrix.go فایل 3"""
     base_config = {
         "tcp_nodelay": True,
-        "tcp_keepalive": 30,          # 30s - استاندارد
-        "tcp_read_buffer": 8388608,   # 8MB - مثل فایل 3
-        "tcp_write_buffer": 8388608,  # 8MB - مثل فایل 3
-        "cleanup_interval": 60,       # 60s - مثل فایل 3
-        "session_timeout": 120,       # 2min - مثل فایل 3
-        "connection_timeout": 600,    # 10min - مثل فایل 3
-        "stream_timeout": 21600,      # 6h - مثل فایل 3
-        "stream_idle_timeout": 600,   # 10min - مثل فایل 3
+        "tcp_keepalive": 30,         
+        "tcp_read_buffer": 8388608,  
+        "tcp_write_buffer": 8388608, 
+        "cleanup_interval": 60,      
+        "session_timeout": 120,      
+        "stream_timeout": 21600,    
+        "stream_idle_timeout": 600,  
         "max_connections": 0,    
-        "max_udp_flows": 5000,        # 5000 - مثل فایل 3
-        "udp_flow_timeout": 600,      # 10min - مثل فایل 3
-        "tls_insecure_skip_verify": True,  # برای self-signed certs
+        "max_udp_flows": 5000,        
+        "udp_flow_timeout": 600,    
+        "tls_insecure_skip_verify": True,  
         "verbose": False
     }
     
 
     if transport in ("kcpmux", "kcp"):
         base_config.update({
-            "udp_read_buffer": 4194304,    # 4MB - افزایش برای OpenVPN
-            "udp_write_buffer": 4194304    # 4MB - افزایش برای OpenVPN
+            "udp_read_buffer": 4194304,  
+            "udp_write_buffer": 4194304  
         })
     elif transport in ("wsmux", "wssmux"):
         base_config.update({
-            "websocket_read_buffer": 524288,   # 512KB - افزایش برای scale بالا
-            "websocket_write_buffer": 524288,  # 512KB - افزایش برای scale بالا
+            "websocket_read_buffer": 524288, 
+            "websocket_write_buffer": 524288, 
             "websocket_compression": False    
         })
     
@@ -510,7 +505,7 @@ def write_yaml_with_comments(file_path: Path, data: dict, comments: dict = None)
                 write_dict(value, indent + 1, full_key)
             elif isinstance(value, list):
                 if value and all(isinstance(item, (int, str, float)) and not isinstance(item, dict) for item in value):
-                    inline_list = "[" + ", ".join(str(item) for item in value) + "]"
+                    inline_list = "[" + ",".join(str(item) for item in value) + "]"
                     if comment:
                         lines.append(f"{'  ' * indent}{key}: {inline_list}  # {comment}")
                     else:
@@ -624,7 +619,7 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
     
     yaml_data["encryption"] = {
         "enabled": cfg.get("encryption_enabled", False),
-        "algorithm": cfg.get("encryption_algorithm", "chacha"),  # "chacha" or "aes-gcm"
+        "algorithm": cfg.get("encryption_algorithm", "chacha"),
         "key": cfg.get("encryption_key", "")
     }
     
@@ -685,13 +680,13 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
         "smux.version": f"SMUX version (default: {smux_default['version']})",
         "advanced.tcp_nodelay": f"TCP NoDelay (default: true)",
         "advanced.tcp_keepalive": f"TCP KeepAlive in seconds (default: 30)",
-        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 4194304 = 4MB)",
-        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 4194304 = 4MB)",
+        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 8388608 = 8MB)",
         "advanced.cleanup_interval": f"Cleanup interval in seconds (default: 60)",
-        "advanced.session_timeout": f"Session timeout in seconds (default: 600 = 10 minutes)",
-        "advanced.connection_timeout": f"Connection timeout in seconds (default: 900 = 15 minutes)",
-        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 28800 = 8 hours)",
-        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 1800 = 30 minutes)",
+        "advanced.session_timeout": f"Session timeout in seconds (default: 120 = 2 minutes - فقط برای sessions بدون heartbeat)",
+        "advanced.connection_timeout": f"Connection timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 21600 = 6 hours)",
+        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 600 = 10 minutes)",
         "advanced.max_connections": f"Max concurrent connections (default: 0 = use 5M limit, practically unlimited)",
         "advanced.max_udp_flows": f"Max UDP flows (default: 100000 for 10K+ users)",
         "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 7200 = 2 hours)",
@@ -792,7 +787,7 @@ def create_client_config_file(cfg: dict) -> Path:
         "max_stream": smux_default["max_stream"],
         "frame_size": smux_default["frame_size"],
         "version": smux_default["version"],
-        "mux_con": cfg.get('mux_con', smux_default["mux_con"])
+        "mux_con": cfg.get('mux_con', 10)
     }
     
     if any(p.get('transport') == 'kcpmux' for p in paths):
@@ -817,7 +812,7 @@ def create_client_config_file(cfg: dict) -> Path:
     
     yaml_data["encryption"] = {
         "enabled": cfg.get("encryption_enabled", False),
-        "algorithm": cfg.get("encryption_algorithm", "chacha"),  # "chacha" or "aes-gcm"
+        "algorithm": cfg.get("encryption_algorithm", "chacha"),
         "key": cfg.get("encryption_key", "")
     }
     
@@ -862,16 +857,16 @@ def create_client_config_file(cfg: dict) -> Path:
         "smux.max_stream": f"Max stream buffer in bytes (default: {smux_default['max_stream']} = 2MB)",
         "smux.frame_size": f"Frame size in bytes (default: {smux_default['frame_size']} = 32KB)",
         "smux.version": f"SMUX version (default: {smux_default['version']})",
-        "smux.mux_con": f"Number of multiplexed connections (default: {smux_default['mux_con']})",
+        "smux.mux_con": f"Number of multiplexed connections (default: 10)",
         "advanced.tcp_nodelay": f"TCP NoDelay (default: true)",
         "advanced.tcp_keepalive": f"TCP KeepAlive in seconds (default: 30)",
-        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 4194304 = 4MB)",
-        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 4194304 = 4MB)",
+        "advanced.tcp_read_buffer": f"TCP read buffer in bytes (default: 8388608 = 8MB)",
+        "advanced.tcp_write_buffer": f"TCP write buffer in bytes (default: 8388608 = 8MB)",
         "advanced.cleanup_interval": f"Cleanup interval in seconds (default: 60)",
-        "advanced.session_timeout": f"Session timeout in seconds (default: 600 = 10 minutes)",
-        "advanced.connection_timeout": f"Connection timeout in seconds (default: 900 = 15 minutes)",
-        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 28800 = 8 hours)",
-        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 1800 = 30 minutes)",
+        "advanced.session_timeout": f"Session timeout in seconds (default: 120 = 2 minutes - فقط برای sessions بدون heartbeat)",
+        "advanced.connection_timeout": f"Connection timeout in seconds (default: 600 = 10 minutes)",
+        "advanced.stream_timeout": f"Stream max lifetime in seconds (default: 21600 = 6 hours)",
+        "advanced.stream_idle_timeout": f"Stream idle timeout in seconds (default: 600 = 10 minutes)",
         "advanced.max_connections": f"Max concurrent connections (default: 0 = use 5M limit, practically unlimited)",
         "advanced.max_udp_flows": f"Max UDP flows (default: 100000 for 10K+ users)",
         "advanced.udp_flow_timeout": f"UDP flow timeout in seconds (default: 7200 = 2 hours)",
@@ -1209,6 +1204,108 @@ def disable_service_for_tunnel(config_path: Path) -> bool:
         return True
     except Exception:
         return False
+
+def cleanup_iptables_rules(config_path: Path) -> bool:
+    """پاک کردن iptables rules، routes و IP address برای تانل (L2TP forwarding)"""
+    try:
+        cfg = parse_yaml_config(config_path)
+        if not cfg:
+            return True 
+        
+        tun_cfg = cfg.get("tun", {})
+        if not tun_cfg.get("enabled", False):
+            return True 
+        
+        tun_name = tun_cfg.get("name", "netrix0").strip()
+        if not tun_name:
+            tun_name = "netrix0"
+        
+        routes = tun_cfg.get("routes", [])
+        for route in routes:
+            try:
+                result = subprocess.run(
+                    ["ip", "route", "del", route, "dev", tun_name],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+            except Exception:
+                pass 
+        
+        local_ip = tun_cfg.get("local", "")
+        if local_ip:
+            try:
+                result = subprocess.run(
+                    ["ip", "addr", "del", local_ip, "dev", tun_name],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+            except Exception:
+                pass
+        
+        try:
+            subprocess.run(
+                ["ip", "link", "set", "dev", tun_name, "down"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+        except Exception:
+            pass
+        
+
+        if tun_cfg.get("forward_l2tp", False):
+            safe_name = ""
+            for c in tun_name:
+                if c.isalnum() or c == '_':
+                    safe_name += c
+                else:
+                    safe_name += '_'
+
+            hash_input = f"l2tp:{safe_name}"
+            hash_bytes = hashlib.sha256(hash_input.encode()).digest()
+            suffix = hash_bytes.hex()[:6]
+            
+            if len(safe_name) > 10:
+                safe_name = safe_name[:10]
+            
+            pre_chain = f"NX_L2TP_PRE_{safe_name}_{suffix}"
+            post_chain = f"NX_L2TP_POST_{safe_name}_{suffix}"
+            
+            for chain in [pre_chain, post_chain]:
+                for from_chain in ["PREROUTING", "POSTROUTING"]:
+
+                    for _ in range(5):
+                        result = subprocess.run(
+                            ["iptables", "-t", "nat", "-D", from_chain, "-j", chain],
+                            capture_output=True,
+                            text=True,
+                            timeout=5
+                        )
+                        if result.returncode != 0:
+                            break
+            
+            for chain in [pre_chain, post_chain]:
+                subprocess.run(
+                    ["iptables", "-t", "nat", "-F", chain],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                subprocess.run(
+                    ["iptables", "-t", "nat", "-X", chain],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+        
+        return True
+    except Exception as e:
+
+        if "Permission denied" in str(e) or "Operation not permitted" in str(e):
+            print(f"  ⚠️  cleanup warning: {e}")
+        return True
 
 def delete_service_for_tunnel(config_path: Path) -> bool:
     """حذف systemd service برای تانل"""
@@ -2310,6 +2407,12 @@ def delete_tunnel_menu():
                     print(f" {FG_GREEN}✅{RESET}")
                 else:
                     print(f" {FG_YELLOW}⚠️{RESET} (continuing anyway)")
+            
+            print(f"  {FG_CYAN}Cleaning up routes and iptables rules...{RESET}", end='', flush=True)
+            if cleanup_iptables_rules(config_path):
+                print(f" {FG_GREEN}✅{RESET}")
+            else:
+                print(f" {FG_YELLOW}⚠️{RESET} (continuing anyway)")
             
             print(f"  {FG_CYAN}Removing systemd service...{RESET}", end='', flush=True)
             if delete_service_for_tunnel(config_path):
