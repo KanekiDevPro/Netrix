@@ -18,8 +18,8 @@ VERSION = "2.0.3"
 ROOT_DIR = Path("/root")
 NETRIX_BINARY = "/usr/local/bin/netrix"
 NETRIX_RELEASE_URLS = {
-    "amd64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v2.0.3/netrix-amd64.tar.gz",
-    "arm64": "https://github.com/Karrari-Dev/Netrix-/releases/download/v2.0.3/netrix-arm64.tar.gz"
+    "amd64": f"https://github.com/Karrari-Dev/Netrix-/releases/download/v{VERSION}/netrix-amd64.tar.gz",
+    "arm64": f"https://github.com/Karrari-Dev/Netrix-/releases/download/v{VERSION}/netrix-arm64.tar.gz"
 }
 
 FG_BLACK = "\033[30m"
