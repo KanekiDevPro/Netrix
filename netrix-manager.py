@@ -1713,7 +1713,7 @@ def create_server_tunnel():
             print()
             c_err("Netrix core is not installed!")
             print(f"\n  {FG_YELLOW}You need to install the core first.{RESET}")
-            print(f"  {FG_CYAN}Go to: Main Menu → Option 6 (Core Management) → Install/Update Core{RESET}\n")
+            print(f"  {FG_CYAN}Go to: Main Menu → Option 6 (Install/Update Core){RESET}\n")
             if ask_yesno(f"  {BOLD}Do you want to install the core now?{RESET}", default=True):
                 install_netrix_core()
                 if ensure_netrix_available():
@@ -2137,7 +2137,7 @@ def create_client_tunnel():
             print()
             c_err("Netrix core is not installed!")
             print(f"\n  {FG_YELLOW}You need to install the core first.{RESET}")
-            print(f"  {FG_CYAN}Go to: Main Menu → Option 6 (Core Management) → Install/Update Core{RESET}\n")
+            print(f"  {FG_CYAN}Go to: Main Menu → Option 6 (Install/Update Core){RESET}\n")
             if ask_yesno(f"  {BOLD}Do you want to install the core now?{RESET}", default=True):
                 install_netrix_core()
                 if ensure_netrix_available():
@@ -2852,7 +2852,7 @@ def core_management_menu():
     while True:
         clear()
         print(f"{BOLD}{FG_CYAN}╔══════════════════════════════════════════════════════════╗{RESET}")
-        print(f"{BOLD}{FG_CYAN}║{RESET}                {BOLD}Netrix Core Management{RESET}                    {BOLD}{FG_CYAN}║{RESET}")
+        print(f"{BOLD}{FG_CYAN}║{RESET}                {BOLD}Install/Update Core{RESET}                    {BOLD}{FG_CYAN}║{RESET}")
         print(f"{BOLD}{FG_CYAN}╚══════════════════════════════════════════════════════════╝{RESET}")
         print()
         
@@ -3689,7 +3689,7 @@ def main_menu():
         print(f"  {BOLD}{FG_YELLOW}3){RESET} Stop")
         print(f"  {BOLD}{FG_MAGENTA}4){RESET} Restart")
         print(f"  {BOLD}{FG_RED}5){RESET} Delete")
-        print(f"  {BOLD}{FG_CYAN}6){RESET} Netrix Core Management")
+        print(f"  {BOLD}{FG_CYAN}6){RESET} Install/Update Core")
         print(f"  {BOLD}{FG_GREEN}7){RESET} System Optimizer")
         print(f"  {FG_WHITE}0){RESET} Exit")
         print()
