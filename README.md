@@ -115,7 +115,7 @@ Netrix provides 4 pre-configured performance profiles:
 ### Quick Install (One Command)
 
 ```bash
-wget https://raw.githubusercontent.com/Karrari-Dev/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc
+wget https://raw.githubusercontent.com/KanekiDevPro/Netrix-/main/netrix-manager.py -O /usr/local/bin/netrix-manager.py && chmod +x /usr/local/bin/netrix-manager.py && echo 'alias netrix-manager="python3 /usr/local/bin/netrix-manager.py"' >> ~/.bashrc && source ~/.bashrc
 ```
 
 After installation, just run:
