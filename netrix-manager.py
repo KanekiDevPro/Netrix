@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-
+"""
+Netrix Core - premium tunnel manager for Netrix
+"""
 import os, sys, time, subprocess, shutil, socket, signal, urllib.request, platform, json, stat, hashlib, ipaddress, re, datetime
 from typing import Optional, Dict, Any, List
 from pathlib import Path
@@ -820,7 +822,17 @@ def configure_l3_tun(role: str, label: str = "L3") -> dict:
     tun_remote = ask_nonempty(f"  {BOLD}Remote TUN CIDR:{RESET}", default=default_remote)
     tun_mtu = ask_int(f"  {BOLD}MTU:{RESET}", min_=576, max_=9000, default=1320)
     tun_streams = ask_int(f"  {BOLD}TUN Streams:{RESET} {FG_WHITE}(1 = lowest jitter; 2-8 for parallel; max L3: 64){RESET}", min_=1, max_=64, default=1)
-    health_port = ask_free_port("Health Port", default=1234, protocols=("tcp",))
+    prefix = "server_l3" if role == "server" else "client_l3"
+    while True:
+        health_port = ask_free_port("Health Port", default=1234, protocols=("tcp",))
+        existing = NETRIX_CONFIG_DIR / f"{prefix}_{health_port}.yaml"
+        if existing.exists():
+            c_err(
+                f"  {existing.name} already exists (health port {health_port}). "
+                f"Choose another health port or remove the old config."
+            )
+            continue
+        break
     return {
         "enabled": True,
         "name": tun_name,
@@ -1018,11 +1030,20 @@ def configure_l3_runtime(role: str, label: str = "L3") -> dict:
     }
     return cfg
 
+def _l3_config_stem(tun_cfg: dict) -> str:
+    """Unique YAML/systemd stem per L3 tunnel (health check port)."""
+    hp = tun_cfg.get("health_port", 1234)
+    try:
+        return str(int(hp))
+    except (TypeError, ValueError):
+        s = str(hp).strip()
+        return s if s else "1234"
+
 def create_l3_server_config_file(cfg: dict) -> Path:
     NETRIX_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     tun_cfg = cfg.get("tun_config") or {}
     l3_cfg = cfg.get("l3_config") or {}
-    stem = tun_cfg.get("name", "netrix") or "netrix"
+    stem = _l3_config_stem(tun_cfg)
     config_path = NETRIX_CONFIG_DIR / f"server_l3_{stem}.yaml"
     yaml_l3, carrier = _l3_build_yaml_block(l3_cfg)
     yaml_data = {
@@ -1067,7 +1088,7 @@ def create_l3_client_config_file(cfg: dict) -> Path:
     NETRIX_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     tun_cfg = cfg.get("tun_config") or {}
     l3_cfg = cfg.get("l3_config") or {}
-    stem = tun_cfg.get("name", "netrix") or "netrix"
+    stem = _l3_config_stem(tun_cfg)
     config_path = NETRIX_CONFIG_DIR / f"client_l3_{stem}.yaml"
     yaml_l3, carrier = _l3_build_yaml_block(l3_cfg)
     yaml_data = {
@@ -2355,34 +2376,30 @@ def list_tunnels() -> List[Dict[str,Any]]:
             if transport == "l3":
                 sec_cfg = cfg.get("l3", {}) or {}
                 tun_cfg = cfg.get('tun', {}) or {}
+                tport = str(tun_cfg.get("health_port", "l3"))
                 carrier = (sec_cfg.get("carrier") or "raw").strip().lower()
                 if carrier == "udp":
                     summary = (
                         f"server L3 udp {sec_cfg.get('listen_ip', '?')}:{sec_cfg.get('listen_port', '?')} -> "
-                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')}"
+                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')} health={tport}"
                     )
-                    tport = str(sec_cfg.get("listen_port", "l3"))
                 elif carrier == "pcap":
                     summary = (
                         f"server L3 pcap {sec_cfg.get('listen_ip', '?')}:{sec_cfg.get('listen_port', '?')} -> "
-                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')}"
+                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')} health={tport}"
                     )
-                    tport = str(sec_cfg.get("listen_port", "l3"))
                 elif carrier == "icmp":
                     summary = (
                         f"server L3 icmp {sec_cfg.get('listen_ip', '?')} -> {sec_cfg.get('dst_ip', '?')} "
-                        f"tun={tun_cfg.get('local', '?')} icmp={sec_cfg.get('icmp_type', '?')}/{sec_cfg.get('icmp_code', '?')}"
+                        f"tun={tun_cfg.get('local', '?')} icmp={sec_cfg.get('icmp_type', '?')}/{sec_cfg.get('icmp_code', '?')} health={tport}"
                     )
-                    tport = "icmp"
                 elif carrier == "tcp":
                     summary = (
                         f"server L3 tcp {sec_cfg.get('listen_ip', '?')}:{sec_cfg.get('listen_port', '?')} -> "
-                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')}"
+                        f"{sec_cfg.get('dst_ip', '?')}:{sec_cfg.get('dst_port', '?')} tun={tun_cfg.get('local', '?')} health={tport}"
                     )
-                    tport = str(sec_cfg.get("listen_port", "l3"))
                 else:
-                    summary = f"server L3 raw {sec_cfg.get('listen_ip','?')} -> {sec_cfg.get('dst_ip','?')} tun={tun_cfg.get('local','?')}"
-                    tport = "l3"
+                    summary = f"server L3 raw {sec_cfg.get('listen_ip','?')} -> {sec_cfg.get('dst_ip','?')} tun={tun_cfg.get('local','?')} health={tport}"
             elif direct_mode:
                 connect = cfg.get('connect', '')
                 tport = connect.split(':')[-1] if ':' in connect else ''
