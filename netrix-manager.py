@@ -66,16 +66,19 @@ KCP_PROFILES = {
     "cpu-efficient": {"nodelay": 0, "interval": 50, "resend": 3, "nc": 0, "sndwnd": 128,  "rcvwnd": 128,  "mtu": 1400, "data_shard": 10, "parity_shard": 2},
 }
 
-RAWSOCKET_SND_WND = 2048
-RAWSOCKET_RCV_WND = 2048
+# Defaults aligned with netrix.go: defaultRawSocket* (rawSocketOptsFromYAML)
+RAWSOCKET_MTU = 1450
+RAWSOCKET_SND_WND = 1024
+RAWSOCKET_RCV_WND = 1024
 RAWSOCKET_DATA_SHARD = 10
-RAWSOCKET_PARITY_SHARD = 2
-RAWSOCKET_SOCK_BUF = 4 * 1024 * 1024
+RAWSOCKET_PARITY_SHARD = 1
+RAWSOCKET_SOCK_BUF = 2 * 1024 * 1024
 RAWSOCKET_PROFILES = {
     "balanced": {},
-    "aggressive": {"snd_wnd": 8192, "rcv_wnd": 8192, "sock_buf": 32 * 1024 * 1024},
-    "latency": {"mtu": 1200, "snd_wnd": 2048, "rcv_wnd": 2048, "sock_buf": 8 * 1024 * 1024},
-    "cpu-efficient": {"mtu": 1280, "snd_wnd": 2048, "rcv_wnd": 2048, "sock_buf": 8 * 1024 * 1024},
+    # Higher windows/buffers for throughput (still explicit in YAML)
+    "aggressive": {"snd_wnd": 8192, "rcv_wnd": 8192, "sock_buf": 8 * 1024 * 1024},
+    "latency": {"mtu": 1200, "snd_wnd": 2048, "rcv_wnd": 2048, "sock_buf": 4 * 1024 * 1024},
+    "cpu-efficient": {"mtu": 1280, "snd_wnd": 1024, "rcv_wnd": 1024, "sock_buf": 2 * 1024 * 1024},
 }
 
 FG_BLACK = "\033[30m"
@@ -655,6 +658,88 @@ def configure_encryption() -> dict:
         config["algorithm"] = "chacha"
         config["key"] = ""
     return config
+
+def is_rawsocket_transport(transport: str) -> bool:
+    t = (transport or "").strip().lower()
+    return t in ("rawsocket", "rawmux")
+
+def apply_rawsocket_detected_to_cfg(cfg: dict, transport: str) -> None:
+    """Auto-detect pcap fields and store in cfg (only non-empty values). Never raises."""
+    if not is_rawsocket_transport(transport):
+        return
+    try:
+        detected = detect_rawsocket_pcap_defaults()
+        for key, yaml_key in (
+            ("interface", "rawsocket_interface"),
+            ("local_ip", "rawsocket_local_ip"),
+            ("router_mac", "rawsocket_router_mac"),
+        ):
+            val = (detected.get(key) or "").strip()
+            if val:
+                cfg[yaml_key] = val
+        if detected.get("local_flags"):
+            cfg["rawsocket_local_flags"] = detected["local_flags"]
+        if detected.get("remote_flags"):
+            cfg["rawsocket_remote_flags"] = detected["remote_flags"]
+    except Exception:
+        pass
+
+def print_rawsocket_detect_summary(cfg: dict) -> None:
+    parts = []
+    if cfg.get("rawsocket_interface"):
+        parts.append(f"interface={cfg['rawsocket_interface']}")
+    if cfg.get("rawsocket_local_ip"):
+        parts.append(f"local_ip={cfg['rawsocket_local_ip']}")
+    if cfg.get("rawsocket_router_mac"):
+        parts.append(f"router_mac={cfg['rawsocket_router_mac']}")
+    if parts:
+        print(f"\n  {FG_GREEN}✅ rawsocket/pcap: auto-detected → {FG_WHITE}{', '.join(parts)}{RESET} (written to config)")
+    else:
+        print(f"\n  {FG_GREEN}✅ rawsocket/pcap: defaults (netrix will auto-detect at runtime){RESET}")
+
+def merge_rawsocket_yaml(yaml_data: dict, cfg: dict, profile: str, *, paths: list | None = None, direct_mode: bool = False) -> bool:
+    """Write rawsocket: block matching YAMLRawSocketConfig in netrix.go. Returns False on error."""
+    try:
+        rs_default = get_default_rawsocket_config(profile)
+        block: dict = {
+            "mtu": rs_default["mtu"],
+            "snd_wnd": rs_default["snd_wnd"],
+            "rcv_wnd": rs_default["rcv_wnd"],
+            "data_shard": rs_default["data_shard"],
+            "parity_shard": rs_default["parity_shard"],
+            "sock_buf": rs_default.get("sock_buf", RAWSOCKET_SOCK_BUF),
+        }
+        for src, dst in (
+            ("rawsocket_interface", "interface"),
+            ("rawsocket_local_ip", "local_ip"),
+            ("rawsocket_router_mac", "router_mac"),
+            ("rawsocket_local_flags", "local_flags"),
+            ("rawsocket_remote_flags", "remote_flags"),
+        ):
+            val = cfg.get(src)
+            if val:
+                block[dst] = val
+        peer_ip = (cfg.get("rawsocket_peer_ip") or "").strip()
+        if not peer_ip and direct_mode and cfg.get("connect"):
+            peer_ip = _extract_ip_from_addr(str(cfg.get("connect")))
+        if not peer_ip and paths:
+            candidates = set()
+            for p in paths:
+                try:
+                    if is_rawsocket_transport(p.get("transport", "")) and p.get("addr"):
+                        ip = _extract_ip_from_addr(str(p.get("addr")))
+                        if ip:
+                            candidates.add(ip)
+                except Exception:
+                    continue
+            if len(candidates) == 1:
+                peer_ip = next(iter(candidates))
+        if peer_ip:
+            block["peer_ip"] = peer_ip
+        yaml_data["rawsocket"] = block
+        return True
+    except Exception:
+        return False
 
 def configure_stealth() -> dict:
     config = {}
@@ -1754,32 +1839,9 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
             "rcvwnd": kcp_default["rcvwnd"],
             "mtu": kcp_default["mtu"]
         }
-    if transport in ("rawsocket", "rawmux"):
-        rs_default = get_default_rawsocket_config(profile)
-        yaml_data["rawsocket"] = {
-            "mtu": rs_default["mtu"],
-            "snd_wnd": rs_default["snd_wnd"],
-            "rcv_wnd": rs_default["rcv_wnd"],
-            "data_shard": rs_default["data_shard"],
-            "parity_shard": rs_default["parity_shard"],
-            "sock_buf": rs_default.get("sock_buf", RAWSOCKET_SOCK_BUF),
-        }
-        if cfg.get("rawsocket_interface"):
-            yaml_data["rawsocket"]["interface"] = cfg["rawsocket_interface"]
-        if cfg.get("rawsocket_local_ip"):
-            yaml_data["rawsocket"]["local_ip"] = cfg["rawsocket_local_ip"]
-        if cfg.get("rawsocket_router_mac"):
-            yaml_data["rawsocket"]["router_mac"] = cfg["rawsocket_router_mac"]
-        if cfg.get("rawsocket_local_flags"):
-            yaml_data["rawsocket"]["local_flags"] = cfg["rawsocket_local_flags"]
-        if cfg.get("rawsocket_remote_flags"):
-            yaml_data["rawsocket"]["remote_flags"] = cfg["rawsocket_remote_flags"]
-        peer_ip = (cfg.get("rawsocket_peer_ip") or "").strip()
-        if not peer_ip and direct_mode and cfg.get("connect"):
-            peer_ip = _extract_ip_from_addr(str(cfg.get("connect")))
-        if peer_ip:
-            yaml_data["rawsocket"]["peer_ip"] = peer_ip
-
+    if is_rawsocket_transport(transport):
+        if not merge_rawsocket_yaml(yaml_data, cfg, profile, direct_mode=direct_mode):
+            raise ValueError("rawsocket YAML block could not be built")
         print(f"  {FG_GREEN}✅ rawsocket config will be written to YAML (KCP+FEC){RESET}")
     
     advanced_default = get_default_advanced_config(transport)
@@ -1981,7 +2043,7 @@ def create_server_config_file(tport: int, cfg: dict) -> Path:
             "rawsocket.rcv_wnd": f"rawsocket receive window (default: {rs_default['rcv_wnd']})",
             "rawsocket.data_shard": f"FEC data shards (default: {rs_default['data_shard']})",
             "rawsocket.parity_shard": f"FEC parity shards (default: {rs_default['parity_shard']})",
-            "rawsocket.sock_buf": f"UDP buffer in bytes (default: {rs_default.get('sock_buf', RAWSOCKET_SOCK_BUF)} = 4MB)",
+            "rawsocket.sock_buf": f"UDP buffer in bytes (default: {rs_default.get('sock_buf', RAWSOCKET_SOCK_BUF)})",
         })
     
     write_yaml_with_comments(config_path, yaml_data, comments)
@@ -2111,42 +2173,12 @@ def create_client_config_file(cfg: dict) -> Path:
             "rcvwnd": kcp_default["rcvwnd"],
             "mtu": kcp_default["mtu"]
         }
-    needs_rawsocket = any(p.get('transport') in ('rawsocket', 'rawmux') for p in paths) or (direct_mode and main_transport in ('rawsocket', 'rawmux'))
+    needs_rawsocket = any(is_rawsocket_transport(p.get("transport", "")) for p in paths) or (
+        direct_mode and is_rawsocket_transport(main_transport)
+    )
     if needs_rawsocket:
-        rs_default = get_default_rawsocket_config(profile)
-        yaml_data["rawsocket"] = {
-            "mtu": rs_default["mtu"],
-            "snd_wnd": rs_default["snd_wnd"],
-            "rcv_wnd": rs_default["rcv_wnd"],
-            "data_shard": rs_default["data_shard"],
-            "parity_shard": rs_default["parity_shard"],
-            "sock_buf": rs_default.get("sock_buf", RAWSOCKET_SOCK_BUF),
-        }
-        if cfg.get("rawsocket_interface"):
-            yaml_data["rawsocket"]["interface"] = cfg["rawsocket_interface"]
-        if cfg.get("rawsocket_local_ip"):
-            yaml_data["rawsocket"]["local_ip"] = cfg["rawsocket_local_ip"]
-        if cfg.get("rawsocket_router_mac"):
-            yaml_data["rawsocket"]["router_mac"] = cfg["rawsocket_router_mac"]
-        if cfg.get("rawsocket_local_flags"):
-            yaml_data["rawsocket"]["local_flags"] = cfg["rawsocket_local_flags"]
-        if cfg.get("rawsocket_remote_flags"):
-            yaml_data["rawsocket"]["remote_flags"] = cfg["rawsocket_remote_flags"]
-        peer_ip = (cfg.get("rawsocket_peer_ip") or "").strip()
-        if not peer_ip:
-            candidates = set()
-            for _p in (paths or []):
-                try:
-                    if (_p.get("transport") in ("rawsocket", "rawmux")) and _p.get("addr"):
-                        _ip = _extract_ip_from_addr(str(_p.get("addr")))
-                        if _ip:
-                            candidates.add(_ip)
-                except Exception:
-                    continue
-            if len(candidates) == 1:
-                peer_ip = next(iter(candidates))
-        if peer_ip:
-            yaml_data["rawsocket"]["peer_ip"] = peer_ip
+        if not merge_rawsocket_yaml(yaml_data, cfg, profile, paths=paths, direct_mode=direct_mode):
+            raise ValueError("rawsocket YAML block could not be built")
 
     advanced_default = get_default_advanced_config(main_transport)
     advanced_default.pop("stream_queue_size", None)
@@ -3434,29 +3466,6 @@ def create_server_tunnel():
                 c_ok("PROXY Protocol on all ports")
         else:
             c_ok("PROXY Protocol disabled")
-        rawsocket_interface = ""
-        rawsocket_local_ip = ""
-        rawsocket_router_mac = ""
-        rawsocket_local_flags = []
-        rawsocket_remote_flags = []
-        if transport in ("rawsocket", "rawmux"):
-            detected = detect_rawsocket_pcap_defaults()
-            rawsocket_interface = detected.get("interface") or ""
-            rawsocket_local_ip = detected.get("local_ip") or ""
-            rawsocket_router_mac = detected.get("router_mac") or ""
-            rawsocket_local_flags = detected.get("local_flags") or []
-            rawsocket_remote_flags = detected.get("remote_flags") or []
-            parts = []
-            if rawsocket_interface:
-                parts.append(f"interface={rawsocket_interface}")
-            if rawsocket_local_ip:
-                parts.append(f"local_ip={rawsocket_local_ip}")
-            if rawsocket_router_mac:
-                parts.append(f"router_mac={rawsocket_router_mac}")
-            if parts:
-                print(f"\n  {FG_GREEN}✅ rawsocket/pcap: auto-detected → {FG_WHITE}{', '.join(parts)}{RESET} (written to config)")
-            else:
-                print(f"\n  {FG_GREEN}✅ rawsocket/pcap: defaults (netrix will auto-detect at runtime){RESET}")
         
         cfg = {
             "tport": tport,
@@ -3510,12 +3519,9 @@ def create_server_tunnel():
         if transport == "realitymux" and reality_sni and reality_fingerprint:
             cfg["reality_sni"] = reality_sni
             cfg["reality_fingerprint"] = reality_fingerprint
-        if transport in ("rawsocket", "rawmux"):
-            cfg["rawsocket_interface"] = rawsocket_interface
-            cfg["rawsocket_local_ip"] = rawsocket_local_ip
-            cfg["rawsocket_router_mac"] = rawsocket_router_mac
-            cfg["rawsocket_local_flags"] = rawsocket_local_flags
-            cfg["rawsocket_remote_flags"] = rawsocket_remote_flags
+        if is_rawsocket_transport(transport):
+            apply_rawsocket_detected_to_cfg(cfg, transport)
+            print_rawsocket_detect_summary(cfg)
         
         config_path = create_server_config_file(tport, cfg)
         
@@ -3535,6 +3541,8 @@ def create_server_tunnel():
         pause()
     except UserCancelled:
         exit_script()
+    except Exception:
+        pause()
 
 def create_client_tunnel():
     """ساخت تانل کلاینت (Outside)"""
@@ -4025,29 +4033,6 @@ def create_client_tunnel():
             c_ok(f"PROXY Protocol: {proxy_protocol_version}")
         else:
             c_ok("PROXY Protocol disabled")
-        rawsocket_interface = ""
-        rawsocket_local_ip = ""
-        rawsocket_router_mac = ""
-        rawsocket_local_flags = []
-        rawsocket_remote_flags = []
-        if transport in ("rawsocket", "rawmux"):
-            detected = detect_rawsocket_pcap_defaults()
-            rawsocket_interface = detected.get("interface") or ""
-            rawsocket_local_ip = detected.get("local_ip") or ""
-            rawsocket_router_mac = detected.get("router_mac") or ""
-            rawsocket_local_flags = detected.get("local_flags") or []
-            rawsocket_remote_flags = detected.get("remote_flags") or []
-            parts = []
-            if rawsocket_interface:
-                parts.append(f"interface={rawsocket_interface}")
-            if rawsocket_local_ip:
-                parts.append(f"local_ip={rawsocket_local_ip}")
-            if rawsocket_router_mac:
-                parts.append(f"router_mac={rawsocket_router_mac}")
-            if parts:
-                print(f"\n  {FG_GREEN}✅ rawsocket/pcap: auto-detected → {FG_WHITE}{', '.join(parts)}{RESET} (written to config)")
-            else:
-                print(f"\n  {FG_GREEN}✅ rawsocket/pcap: defaults (netrix will auto-detect at runtime){RESET}")
         
         cfg = {
             "psk": psk,
@@ -4086,12 +4071,9 @@ def create_client_tunnel():
             print(f"  {FG_GREEN}✅ Certificate files added to config: cert={cert_file}, key={key_file}{RESET}")
         elif transport in ("tlsmux", "wssmux", "realitymux") and direct_mode:
             print(f"  {FG_YELLOW}⚠️  Option 3 selected – self-signed will be used. Ensure Iran server has «accept self-signed» enabled.{RESET}")
-        if transport in ("rawsocket", "rawmux"):
-            cfg["rawsocket_interface"] = rawsocket_interface
-            cfg["rawsocket_local_ip"] = rawsocket_local_ip
-            cfg["rawsocket_router_mac"] = rawsocket_router_mac
-            cfg["rawsocket_local_flags"] = rawsocket_local_flags
-            cfg["rawsocket_remote_flags"] = rawsocket_remote_flags
+        if is_rawsocket_transport(transport):
+            apply_rawsocket_detected_to_cfg(cfg, transport)
+            print_rawsocket_detect_summary(cfg)
         
         config_path = create_client_config_file(cfg)
         
@@ -4111,6 +4093,8 @@ def create_client_tunnel():
         pause()
     except UserCancelled:
         exit_script()
+    except Exception:
+        pause()
 
 def status_menu():
     """Tunnel status dashboard."""
