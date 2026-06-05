@@ -13,7 +13,7 @@ except ImportError:
     sys.exit(1)
 
 # ========== Version ==========
-VERSION = "3.0.0"
+VERSION = "3.0.1"
 
 ROOT_DIR = Path("/root")
 NETRIX_CONFIG_DIR = ROOT_DIR / "netrix"
@@ -66,7 +66,6 @@ KCP_PROFILES = {
     "cpu-efficient": {"nodelay": 0, "interval": 50, "resend": 3, "nc": 0, "sndwnd": 128,  "rcvwnd": 128,  "mtu": 1400, "data_shard": 10, "parity_shard": 2},
 }
 
-# Defaults aligned with netrix.go: defaultRawSocket* (rawSocketOptsFromYAML)
 RAWSOCKET_MTU = 1450
 RAWSOCKET_SND_WND = 1024
 RAWSOCKET_RCV_WND = 1024
@@ -75,7 +74,6 @@ RAWSOCKET_PARITY_SHARD = 1
 RAWSOCKET_SOCK_BUF = 2 * 1024 * 1024
 RAWSOCKET_PROFILES = {
     "balanced": {},
-    # Higher windows/buffers for throughput (still explicit in YAML)
     "aggressive": {"snd_wnd": 8192, "rcv_wnd": 8192, "sock_buf": 8 * 1024 * 1024},
     "latency": {"mtu": 1200, "snd_wnd": 2048, "rcv_wnd": 2048, "sock_buf": 4 * 1024 * 1024},
     "cpu-efficient": {"mtu": 1280, "snd_wnd": 1024, "rcv_wnd": 1024, "sock_buf": 2 * 1024 * 1024},
@@ -2766,10 +2764,13 @@ After=network.target
 
 [Service]
 Type=simple
+Environment=LIC_CACHE_DIR=/var/lib/netrix
+ExecStartPre=/bin/mkdir -p /var/lib/netrix
+ExecStartPre=/bin/chmod 700 /var/lib/netrix
 {exec_start_pre}{exec_stop_post}ExecStart={netrix_bin} -config {config_path}
 Restart=always
-RestartSec=2
-TimeoutStartSec=10
+RestartSec=5
+TimeoutStartSec=120
 TimeoutStopSec=15
 KillMode=mixed
 KillSignal=SIGTERM
